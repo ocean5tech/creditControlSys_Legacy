@@ -1,0 +1,25 @@
+[2025-09-28 13:43:18] ========================================================
+[2025-09-28 13:43:18] LEGACY CREDIT CONTROL SYSTEM - INTEGRATED TEST SUITE
+[2025-09-28 13:43:18] ========================================================
+[2025-09-28 13:43:18] Starting comprehensive system testing...
+[2025-09-28 13:43:18] ========================================================
+[2025-09-28 13:43:18] PHASE 1: SYSTEM STARTUP TESTING
+[2025-09-28 13:43:18] ========================================================
+[2025-09-28 13:43:18] 1.1 Cleaning up existing containers...
+[2025-09-28 13:43:18] 1.2 Building container from scratch...
+[2025-09-28 13:43:22] ✅ Container build: SUCCESS
+[2025-09-28 13:43:22] 1.3 Starting container with full configuration...
+[2025-09-28 13:43:22] ✅ Container startup: SUCCESS
+[2025-09-28 13:43:22] Container ID: 75d15183b1b7
+[2025-09-28 13:43:22] 1.4 Waiting for service initialization (30 seconds)...
+[2025-09-28 13:43:52] 1.5 Collecting startup evidence...
+[2025-09-28 13:43:52] 1.6 Performing system health checks...
+[2025-09-28 13:43:53] ✅ Main application: HEALTHY
+[2025-09-28 13:43:53] ✅ Customer Details: HEALTHY
+[2025-09-28 13:43:53] ❌ Credit Limit Modify: FAILED
+[2025-09-28 13:43:53] ✅ Risk Assessment: HEALTHY
+[2025-09-28 13:43:54] ✅ Payment Tracking: HEALTHY
+[2025-09-28 13:43:54] ✅ Collections Management: HEALTHY
+[2025-09-28 13:43:54] ✅ Reports Dashboard: HEALTHY
+[2025-09-28 13:43:54] ❌ System startup testing: PARTIAL FAILURE
+[2025-09-28 13:43:54] ❌ PHASE 1: SYSTEM STARTUP - FAILED

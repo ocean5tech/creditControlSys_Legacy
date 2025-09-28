@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Legacy Credit Control System</title>
+    <link rel="stylesheet" type="text/css" href="css/legacy-style.css">
+</head>
+<body>
+    <div id="header">
+        <h1>Legacy Credit Control System</h1>
+        <p>Insurance Company - Credit Management Portal</p>
+    </div>
+    
+    <div id="main-content">
+        <div class="welcome-section">
+            <h2>System Status</h2>
+            <table border="1" cellpadding="5" cellspacing="0">
+                <tr>
+                    <th>Component</th>
+                    <th>Status</th>
+                    <th>Last Check</th>
+                </tr>
+                <tr>
+                    <td>Web Application</td>
+                    <td><span class="status-ok">✓ ONLINE</span></td>
+                    <td id="current-time"></td>
+                </tr>
+                <tr>
+                    <td>Database Connection</td>
+                    <td><span class="status-checking">⚠ CHECKING</span></td>
+                    <td id="current-time2"></td>
+                </tr>
+                <tr>
+                    <td>Batch Processing</td>
+                    <td><span class="status-ready">● READY</span></td>
+                    <td id="current-time3"></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="navigation-section">
+            <h2>Available Functions</h2>
+            <div class="function-links">
+                <div class="function-group">
+                    <h3>Customer Management</h3>
+                    <ul>
+                        <li><a href="customer-search.html">Customer Search</a></li>
+                        <li><a href="customer-details.html">Customer Details</a></li>
+                        <li><a href="credit-limit.html">Credit Limit Management</a></li>
+                    </ul>
+                </div>
+                
+                <div class="function-group">
+                    <h3>Risk Assessment</h3>
+                    <ul>
+                        <li><a href="risk-dashboard.html">Risk Dashboard</a></li>
+                        <li><a href="payment-tracking.html">Payment Tracking</a></li>
+                    </ul>
+                </div>
+                
+                <div class="function-group">
+                    <h3>Reports & Analytics</h3>
+                    <ul>
+                        <li><a href="collections.html">Collections Management</a></li>
+                        <li><a href="reports.html">Reports & Analytics</a></li>
+                    </ul>
+                </div>
+                
+                <div class="function-group">
+                    <h3>System Management</h3>
+                    <ul>
+                        <li><a href="http://35.77.54.203:4001/" target="_blank">DB Monitor</a></li>
+                        <li><a href="http://35.77.54.203:4002/" target="_blank">Batch Status</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="system-info">
+            <h3>System Information</h3>
+            <p><strong>Version:</strong> Legacy 1.0 (JDK8 + Tomcat 8.5 - JDK5 Compatible)</p>
+            <p><strong>Build Date:</strong> <span id="build-date"></span></p>
+            <p><strong>Server:</strong> 35.77.54.203:4000</p>
+            <p><strong>Technology Stack:</strong> JDK8, Tomcat 8.5, HTML/CSS, PostgreSQL</p>
+            <p><strong>Container:</strong> Podman credit-control-legacy:v1.0</p>
+        </div>
+    </div>
+    
+    <div id="footer">
+        <p>&copy; 2025 Insurance Company - Legacy Credit Control System POC</p>
+        <p>Phase 1: Legacy System Implementation - Milestone 1 Complete</p>
+    </div>
+    
+    <script>
+        // Update timestamps
+        const now = new Date().toLocaleString();
+        document.getElementById('current-time').textContent = now;
+        document.getElementById('current-time2').textContent = now;
+        document.getElementById('current-time3').textContent = now;
+        document.getElementById('build-date').textContent = now;
+    </script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Customer Credit Details - Legacy Credit Control System</title>
+    <link rel="stylesheet" type="text/css" href="../css/legacy-style.css">
+    <style>
+        .customer-header { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #007bff; }
+        .details-section { background: white; border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 3px; }
+        .details-table { width: 100%; border-collapse: collapse; }
+        .details-table th, .details-table td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        .details-table th { background: #f8f9fa; font-weight: bold; width: 30%; }
+        .risk-indicator { padding: 5px 10px; border-radius: 3px; color: white; font-weight: bold; }
+        .risk-low { background: #28a745; }
+        .risk-medium { background: #ffc107; color: #000; }
+        .risk-high { background: #fd7e14; }
+        .risk-very-high { background: #dc3545; }
+        .credit-rating { font-size: 18px; font-weight: bold; padding: 5px 10px; border-radius: 3px; }
+        .rating-aaa, .rating-aa { background: #d4edda; color: #155724; }
+        .rating-a, .rating-bbb { background: #fff3cd; color: #856404; }
+        .rating-bb, .rating-b { background: #f8d7da; color: #721c24; }
+        .rating-c { background: #f5c6cb; color: #721c24; }
+        .action-buttons { margin: 20px 0; }
+        .action-buttons a { display: inline-block; padding: 10px 15px; margin: 5px; text-decoration: none; border-radius: 3px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Legacy Credit Control System</h1>
+        <p>Customer Credit Details - Core Business Function</p>
+    </div>
+    
+    <div id="main-content">
+        
+        
+        <div class="customer-header">
+            <h2>ABC Manufacturing Ltd (CUST001)</h2>
+            <p><strong>Credit Rating:</strong> <span class="credit-rating rating-a">A</span></p>
+            <p><strong>Risk Level:</strong> 
+                <span class="risk-indicator risk-low">
+                    LOW (35/100)
+                </span>
+            </p>
+        </div>
+        
+        <div class="details-section">
+            <h3>Basic Information</h3>
+            <table class="details-table">
+                <tr><th>Customer Code</th><td>CUST001</td></tr>
+                <tr><th>Company Name</th><td>ABC Manufacturing Ltd</td></tr>
+                <tr><th>Contact Person</th><td>John Smith</td></tr>
+                <tr><th>Industry</th><td>Manufacturing</td></tr>
+            </table>
+        </div>
+        
+        <div class="details-section">
+            <h3>Credit Information</h3>
+            <table class="details-table">
+                <tr><th>Credit Limit</th><td>$200,000.00</td></tr>
+                <tr><th>Outstanding Balance</th><td>$45,000.00</td></tr>
+                <tr><th>Available Credit</th><td>$155,000.00</td></tr>
+            </table>
+        </div>
+        
+        <div class="details-section">
+            <h3>Risk Assessment</h3>
+            <p>Customer has good credit history with stable payment patterns. Current credit utilization is acceptable.</p>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="credit-limit-modify.jsp?customerCode=CUST001" class="btn-warning">Modify Credit Limit</a>
+            <a href="../customer-search-working.jsp" class="btn-secondary">Back to Search</a>
+        </div>
+        
+    </div>
+    
+    <div id="footer">
+        <p>&copy; 2025 Insurance Company - Legacy Credit Control System</p>
+    </div>
+</body>
+</html>

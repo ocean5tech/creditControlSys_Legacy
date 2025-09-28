@@ -1,0 +1,187 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Risk Assessment Dashboard - Legacy Credit Control System</title>
+    <link rel="stylesheet" type="text/css" href="../css/legacy-style.css">
+    <style>
+        .dashboard-header { background: #e3f2fd; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196f3; }
+        .risk-summary { background: white; border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 3px; }
+        .risk-metrics { display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; }
+        .metric-card { flex: 1; min-width: 200px; background: white; border: 1px solid #ddd; padding: 15px; border-radius: 3px; text-align: center; }
+        .metric-value { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        .metric-label { color: #666; font-size: 12px; }
+        .risk-low { color: #28a745; }
+        .risk-medium { color: #ffc107; }
+        .risk-high { color: #fd7e14; }
+        .risk-very-high { color: #dc3545; }
+        .assessment-details { background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 3px; }
+        .details-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .details-table th, .details-table td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+        .details-table th { background: #f8f9fa; font-weight: bold; }
+        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+        .chart-container { background: white; border: 1px solid #ddd; padding: 20px; margin: 15px 0; border-radius: 3px; }
+        .action-buttons { margin: 20px 0; text-align: center; }
+        .btn { display: inline-block; padding: 10px 20px; margin: 5px; text-decoration: none; border-radius: 3px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .recommendation { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 15px 0; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Legacy Credit Control System</h1>
+        <p>Risk Assessment Dashboard - Core Business Function 4</p>
+    </div>
+    
+    <div id="main-content">
+        
+        
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h2>Risk Assessment Dashboard</h2>
+            <p>Current Analysis Customer: <strong>ABC Manufacturing Ltd (CUST001)</strong></p>
+        </div>
+        
+        <!-- Risk Indicators Overview -->
+        <div class="risk-metrics">
+            <div class="metric-card">
+                <div class="metric-value risk-low">2</div>
+                <div class="metric-label">Low Risk Customers</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value risk-medium">0</div>
+                <div class="metric-label">Medium Risk Customers</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value risk-high">1</div>
+                <div class="metric-label">High Risk Customers</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value risk-very-high">0</div>
+                <div class="metric-label">Very High Risk Customers</div>
+            </div>
+        </div>
+        
+        <!-- Current Customer Risk Details -->
+        <div class="risk-summary">
+            <h3>Current Customer Risk Analysis</h3>
+            
+            <div class="assessment-details">
+                <h4>Comprehensive Risk Score: 
+                    <span class="risk-low">
+                        35/100 (LOW)
+                    </span>
+                </h4>
+                
+                <div class="progress-bar" style="margin: 15px 0;">
+                    <div class="progress-fill" style="width: 35%; background: 
+                        
+                               #28a745
+                        ;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk Assessment Recommendations -->
+            <div class="recommendation">
+                <h4>Risk Management Recommendations:</h4>
+                
+                    <p>Customer credit status is good, risk is controllable. Recommend maintaining current credit policy.</p>
+                
+                
+                <h4>Detailed Analysis:</h4>
+                <ul>
+                    <li><strong>Credit Status:</strong> Credit Rating A</li>
+                    <li><strong>Balance Status:</strong> Current Utilization Rate 22.5%</li>
+                    <li><strong>Industry Risk:</strong> Manufacturing Industry</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- All Customers Risk Overview -->
+        <div class="chart-container">
+            <h3>All Customers Risk Overview</h3>
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Customer Code</th>
+                        <th>Company Name</th>
+                        <th>Credit Rating</th>
+                        <th>Risk Score</th>
+                        <th>Risk Level</th>
+                        <th>Suggested Limit</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr style="background: #e3f2fd;">
+                        <td>CUST001</td>
+                        <td>ABC Manufacturing Ltd</td>
+                        <td>A</td>
+                        <td><span class="risk-low">35/100</span></td>
+                        <td><span class="risk-low">LOW</span></td>
+                        <td>¥200,000</td>
+                        <td>
+                            <a href="risk-assessment.jsp?customerCode=CUST001" class="btn btn-primary" style="padding: 3px 8px; font-size: 12px;">View</a>
+                            <a href="../customer/credit-limit-modify.jsp?customerCode=CUST001" class="btn btn-warning" style="padding: 3px 8px; font-size: 12px;">Adjust</a>
+                        </td>
+                    </tr>
+                    
+                    <tr style="">
+                        <td>CUST002</td>
+                        <td>XYZ Trading Corp</td>
+                        <td>BBB</td>
+                        <td><span class="risk-high">72/100</span></td>
+                        <td><span class="risk-high">HIGH</span></td>
+                        <td>¥200,000</td>
+                        <td>
+                            <a href="risk-assessment.jsp?customerCode=CUST002" class="btn btn-primary" style="padding: 3px 8px; font-size: 12px;">View</a>
+                            <a href="../customer/credit-limit-modify.jsp?customerCode=CUST002" class="btn btn-warning" style="padding: 3px 8px; font-size: 12px;">Adjust</a>
+                        </td>
+                    </tr>
+                    
+                    <tr style="">
+                        <td>CUST003</td>
+                        <td>Global Logistics Inc</td>
+                        <td>AA</td>
+                        <td><span class="risk-low">25/100</span></td>
+                        <td><span class="risk-low">LOW</span></td>
+                        <td>¥200,000</td>
+                        <td>
+                            <a href="risk-assessment.jsp?customerCode=CUST003" class="btn btn-primary" style="padding: 3px 8px; font-size: 12px;">View</a>
+                            <a href="../customer/credit-limit-modify.jsp?customerCode=CUST003" class="btn btn-warning" style="padding: 3px 8px; font-size: 12px;">Adjust</a>
+                        </td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="../customer/customer-details.jsp?customerCode=CUST001" class="btn btn-primary">View Customer Details</a>
+            <a href="../customer/credit-limit-modify.jsp?customerCode=CUST001" class="btn btn-warning">Modify Credit Limit</a>
+            <a href="../customer-search-working.jsp" class="btn btn-secondary">Back to Search</a>
+        </div>
+        
+        <!-- System Information -->
+        <div class="assessment-details">
+            <p><strong>Risk Assessment Engine:</strong> POC Risk Assessment v1.0</p>
+            <p><strong>Assessment Time:</strong> Sun Sep 28 13:43:53 UTC 2025</p>
+            <p><strong>Assessed Customers:</strong> 3</p>
+        </div>
+        
+    </div>
+    
+    <div id="footer">
+        <p>&copy; 2025 Insurance Company - Legacy Credit Control System</p>
+    </div>
+</body>
+</html>

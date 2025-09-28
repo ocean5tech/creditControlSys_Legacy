@@ -1,0 +1,126 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Customer Search - Working Version</title>
+    <link rel="stylesheet" type="text/css" href="css/legacy-style.css">
+    <style>
+        .search-form { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .search-form table { width: 100%; }
+        .search-form td { padding: 8px; }
+        .search-form input[type="text"], .search-form select { width: 200px; padding: 4px; }
+        .search-btn { background: #0066cc; color: white; padding: 8px 16px; border: none; border-radius: 3px; cursor: pointer; }
+        .search-btn:hover { background: #0056b3; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .results-table th, .results-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .results-table th { background: #0066cc; color: white; }
+        .results-table tr:nth-child(even) { background: #f2f2f2; }
+        .results-table a { color: #0066cc; text-decoration: none; }
+        .results-table a:hover { text-decoration: underline; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Legacy Credit Control System</h1>
+        <p>Customer Search - Working Version</p>
+    </div>
+    
+    <div id="main-content">
+        
+        <!-- Search Form -->
+        <div class="search-form">
+            <h2>Customer Search</h2>
+            
+            <form action="customer-search-working.jsp" method="get">
+                <input type="hidden" name="action" value="search"/>
+                <table>
+                    <tr>
+                        <td><strong>Customer Code:</strong></td>
+                        <td>
+                            <input type="text" name="customerCode" value="">
+                            <br><small>Enter full or partial customer code</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Company Name:</strong></td>
+                        <td>
+                            <input type="text" name="companyName" value="">
+                            <br><small>Enter full or partial company name</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <select name="status">
+                                <option value="">All</option>
+                                <option value="ACTIVE" >Active</option>
+                                <option value="INACTIVE" >Inactive</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Max Results:</strong></td>
+                        <td>
+                            <select name="maxResults">
+                                <option value="25" >25</option>
+                                <option value="50" >50</option>
+                                <option value="100" >100</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <input type="submit" value="Search" class="search-btn"/>
+                            <input type="button" value="Clear" onclick="clearForm()" style="margin-left: 10px;"/>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        
+        
+        
+        <div class="message">
+            <strong>Instructions:</strong> Enter search criteria above and click "Search" to find customers.
+        </div>
+        
+        
+        
+        <!-- System Status -->
+        <div class="search-form">
+            <h3>System Status</h3>
+            <p><strong>Date:</strong> Sun Sep 28 13:43:53 UTC 2025</p>
+            <p><strong>Server:</strong> Apache Tomcat/8.5.100</p>
+            <p><strong>Search Action:</strong> None</p>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="navigation-section">
+            <h3>Quick Links</h3>
+            <p>
+                <a href="/">Dashboard</a> |
+                <a href="customer-search-working.jsp">New Search</a> |
+                <a href="test-simple.jsp">Simple Test</a>
+            </p>
+        </div>
+        
+    </div>
+    
+    <div id="footer">
+        <p>&copy; 2025 Insurance Company - Legacy Credit Control System</p>
+        <p>Customer Search Module - Milestone 4 Implementation (Working Version)</p>
+    </div>
+    
+    <script>
+        function clearForm() {
+            document.forms[0].reset();
+            window.location.href = 'customer-search-working.jsp';
+        }
+    </script>
+    
+</body>
+</html>

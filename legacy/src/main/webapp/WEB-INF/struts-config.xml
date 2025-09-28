@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 1.3//EN"
+    "http://struts.apache.org/dtds/struts-config_1_3.dtd">
+
+<struts-config>
+
+    <!-- Data source configuration handled directly in DatabaseConnection class -->
+
+    <!-- ========== Form Bean Definitions ===================================== -->
+    <form-beans>
+        
+        <!-- Customer Search Form -->
+        <form-bean name="customerSearchForm" type="com.creditcontrol.form.CustomerSearchForm"/>
+        
+        <!-- Customer Details Form -->
+        <form-bean name="customerForm" type="com.creditcontrol.form.CustomerForm"/>
+        
+        <!-- Credit Limit Management Form -->
+        <form-bean name="creditLimitForm" type="com.creditcontrol.form.CreditLimitForm"/>
+        
+        <!-- Login Form -->
+        <form-bean name="loginForm" type="com.creditcontrol.form.LoginForm"/>
+        
+    </form-beans>
+
+    <!-- ========== Global Exception Definitions ============================== -->
+    <global-exceptions>
+        <exception key="error.database.connection"
+                   type="java.sql.SQLException"
+                   path="/error/database-error.jsp"/>
+        
+        <exception key="error.general"
+                   type="java.lang.Exception"
+                   path="/error/general-error.jsp"/>
+    </global-exceptions>
+
+    <!-- ========== Global Forward Definitions =============================== -->
+    <global-forwards>
+        <forward name="home" path="/index.jsp" redirect="false"/>
+        <forward name="login" path="/login.jsp" redirect="true"/>
+        <forward name="logout" path="/logout.do" redirect="true"/>
+        <forward name="error" path="/error/general-error.jsp" redirect="false"/>
+    </global-forwards>
+
+    <!-- ========== Action Mapping Definitions =============================== -->
+    <action-mappings>
+        
+        <!-- Home/Welcome Action -->
+        <action path="/welcome"
+                type="com.creditcontrol.action.WelcomeAction">
+            <forward name="success" path="/welcome.jsp"/>
+        </action>
+        
+        <!-- Customer Search Actions -->
+        <action path="/customerSearch"
+                type="com.creditcontrol.action.CustomerSearchAction"
+                name="customerSearchForm"
+                scope="request"
+                validate="true"
+                input="/customer/customer-search.jsp">
+            <forward name="success" path="/customer/search-results.jsp"/>
+            <forward name="input" path="/customer/customer-search.jsp"/>
+        </action>
+        
+        <!-- Customer Details Actions -->
+        <action path="/customerDetails"
+                type="com.creditcontrol.action.CustomerDetailsAction"
+                name="customerForm"
+                scope="request"
+                validate="false">
+            <forward name="success" path="/customer/customer-details.jsp"/>
+            <forward name="error" path="/customer/customer-error.jsp"/>
+            <forward name="deleted" path="/customer/customer-search.jsp"/>
+        </action>
+        
+        <!-- Credit Limit Management Actions -->
+        <action path="/creditLimit"
+                type="com.creditcontrol.action.CreditLimitAction"
+                name="creditLimitForm"
+                scope="request"
+                validate="true"
+                input="/credit/credit-limit.jsp">
+            <forward name="success" path="/credit/credit-limit.jsp"/>
+            <forward name="dashboard" path="/credit/credit-dashboard.jsp"/>
+            <forward name="error" path="/credit/credit-error.jsp"/>
+        </action>
+        
+        <!-- Risk Assessment Dashboard -->
+        <action path="/riskDashboard"
+                type="com.creditcontrol.action.RiskDashboardAction">
+            <forward name="success" path="/risk/risk-dashboard.jsp"/>
+        </action>
+        
+        <!-- Payment Tracking -->
+        <action path="/paymentTracking"
+                type="com.creditcontrol.action.PaymentTrackingAction">
+            <forward name="success" path="/payment/payment-tracking.jsp"/>
+            <forward name="details" path="/payment/payment-details.jsp"/>
+        </action>
+        
+        <!-- Collections Management -->
+        <action path="/collections"
+                type="com.creditcontrol.action.CollectionsAction">
+            <forward name="success" path="/collections/collections-list.jsp"/>
+            <forward name="details" path="/collections/collection-details.jsp"/>
+        </action>
+        
+        <!-- Reports and Analytics -->
+        <action path="/reports"
+                type="com.creditcontrol.action.ReportsAction"
+                parameter="reportType">
+            <forward name="list" path="/reports/reports-list.jsp"/>
+            <forward name="customer" path="/reports/customer-report.jsp"/>
+            <forward name="credit" path="/reports/credit-report.jsp"/>
+            <forward name="summary" path="/reports/summary-report.jsp"/>
+        </action>
+        
+        <!-- System Administration -->
+        <action path="/admin"
+                type="com.creditcontrol.action.AdminAction"
+                roles="admin">
+            <forward name="success" path="/admin/admin-dashboard.jsp"/>
+            <forward name="users" path="/admin/user-management.jsp"/>
+            <forward name="config" path="/admin/system-config.jsp"/>
+        </action>
+        
+        <!-- Health Check and System Status -->
+        <action path="/systemStatus"
+                type="com.creditcontrol.action.SystemStatusAction">
+            <forward name="success" path="/system/system-status.jsp"/>
+        </action>
+        
+    </action-mappings>
+
+    <!-- ========== Controller Configuration =============================== -->
+    <controller processorClass="org.apache.struts.action.RequestProcessor"
+                multipartClass="org.apache.struts.upload.CommonsMultipartRequestHandler"
+                maxFileSize="2M"
+                locale="true"
+                nocache="true"/>
+
+    <!-- ========== Message Resources Definitions ========================== -->
+    <message-resources parameter="ApplicationResources"/>
+
+    <!-- ========== Plug Ins Configuration ================================= -->
+    <plug-in className="org.apache.struts.validator.ValidatorPlugIn">
+        <set-property property="pathnames" 
+                     value="/WEB-INF/validator-rules.xml,/WEB-INF/validation.xml"/>
+    </plug-in>
+
+</struts-config>

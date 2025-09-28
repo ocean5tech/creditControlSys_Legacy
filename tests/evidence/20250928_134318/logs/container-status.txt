@@ -1,0 +1,5 @@
+CONTAINER ID  IMAGE                                      COMMAND               CREATED         STATUS                   PORTS                             NAMES
+31956d24c9dc  localhost/credit-control-legacy:v1.0       /app/docker-entry...  3 days ago      Exited (143) 2 days ago                                    credit-control-legacy-net
+5e7276b35acf  docker.io/library/postgres:13              postgres              2 days ago      Created                  0.0.0.0:5432->5432/tcp            postgres-creditcontrol
+ea9462db105b  localhost/credit-control-legacy:v2.2       /app/docker-entry...  2 days ago      Exited (143) 2 days ago  0.0.0.0:4000-4002->8080-8082/tcp  credit-control-legacy-container
+75d15183b1b7  localhost/credit-control-legacy:v3.0-test  /app/docker-entry...  30 seconds ago  Up 30 seconds            0.0.0.0:4000-4002->8080-8082/tcp  credit-control-legacy

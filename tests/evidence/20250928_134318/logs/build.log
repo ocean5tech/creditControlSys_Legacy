@@ -1,0 +1,41 @@
+STEP 1/16: FROM docker.io/library/tomcat:8.5-jdk8
+STEP 2/16: LABEL description="Legacy Credit Control System - JDK8 + Tomcat 8.5"
+--> Using cache e3f71ab9bfebde868be7efe0586c0ebed8a2900f9d56fc7baf5896eebd45c7f7
+--> e3f71ab9bfeb
+STEP 3/16: LABEL version="1.0"
+--> Using cache 812153ac1b5bcb52bc006be9662939b4de55e53ee251eb3e6bf2d5bcc120a55d
+--> 812153ac1b5b
+STEP 4/16: ENV CATALINA_HOME=/usr/local/tomcat
+--> Using cache 36f82f20fcfdea9f03ab94bdcf890ef7f562252b655fe02314897052130969f5
+--> 36f82f20fcfd
+STEP 5/16: ENV JAVA_OPTS="-Xms512m -Xmx1024m"
+--> Using cache c6a3ca93d75ea501a777f0c08a200da22c59a8044bc3f117ef065db36045cbc4
+--> c6a3ca93d75e
+STEP 6/16: RUN apt-get update && apt-get install -y     wget     curl     ant     vim     && rm -rf /var/lib/apt/lists/*
+--> Using cache 0790c50e93b4f064932e633d782bbde4f62ded596c120ea58e14a417b90c4929
+--> 0790c50e93b4
+STEP 7/16: RUN mkdir -p /app/logs /app/data /app/config /app/lib
+--> Using cache 2733d1c5c0c4c00414f9f84d6410486c5c1fe230cc43728c8b9d76460dd7f9f6
+--> 2733d1c5c0c4
+STEP 8/16: RUN cd /app/lib &&     wget https://jdbc.postgresql.org/download/postgresql-42.2.29.jar -O postgresql.jar ||     echo "JDBC download failed" &&     wget https://repo1.maven.org/maven2/log4j/log4j/1.2.17/log4j-1.2.17.jar -O log4j.jar ||     echo "Log4j download failed" &&     cp postgresql.jar $CATALINA_HOME/lib/ &&     cp log4j.jar $CATALINA_HOME/lib/
+--> Using cache 13f37c69ed22d1728054b2f886b46b84e2c5caad853a0fedcf16561990801503
+--> 13f37c69ed22
+STEP 9/16: COPY legacy/src/main/webapp/ $CATALINA_HOME/webapps/ROOT/
+--> 1bfef5aa1192
+STEP 10/16: RUN mkdir -p $CATALINA_HOME/webapps/ROOT/WEB-INF/classes
+--> 4ac633fefe32
+STEP 11/16: COPY legacy/docker-entrypoint.sh /app/
+--> 365bada6cd61
+STEP 12/16: RUN chmod +x /app/docker-entrypoint.sh
+--> 1f824cb06d91
+STEP 13/16: RUN sed -i 's/8080/8080/g' $CATALINA_HOME/conf/server.xml &&     sed -i 's/<\/Service>/    <Connector port="8081" protocol="HTTP\/1.1" connectionTimeout="20000" redirectPort="8443" \/>\n    <Connector port="8082" protocol="HTTP\/1.1" connectionTimeout="20000" redirectPort="8443" \/>\n  <\/Service>/' $CATALINA_HOME/conf/server.xml
+--> 68890539b581
+STEP 14/16: EXPOSE 8080 8081 8082
+--> c60cfd183a72
+STEP 15/16: WORKDIR /app
+--> d4fc66068690
+STEP 16/16: CMD ["/app/docker-entrypoint.sh"]
+COMMIT credit-control-legacy:v3.0-test
+--> 08484e504499
+Successfully tagged localhost/credit-control-legacy:v3.0-test
+08484e504499d3378a0e299dfeecbb6208da2adf9b71aa04e23876b7281afca0

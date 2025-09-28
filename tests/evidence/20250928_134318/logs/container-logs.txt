@@ -1,0 +1,80 @@
+Starting Legacy Credit Control System...
+Date: Sun Sep 28 01:43:22 PM UTC 2025
+Java Version: openjdk version "1.8.0_402"
+Database configuration:
+  Host: 35.77.54.203:5432
+  Database: creditcontrol
+  User: creditapp
+Starting Tomcat...
+Port mappings:
+  Main Application: 8080 -> 4000
+  DB Monitor: 8081 -> 4001
+  Batch API: 8082 -> 4002
+28-Sep-2025 13:43:23.948 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server version name:   Apache Tomcat/8.5.100
+28-Sep-2025 13:43:23.959 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server built:          Mar 19 2024 13:54:42 UTC
+28-Sep-2025 13:43:23.960 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Server version number: 8.5.100.0
+28-Sep-2025 13:43:23.960 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Name:               Linux
+28-Sep-2025 13:43:23.960 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log OS Version:            6.14.0-1012-aws
+28-Sep-2025 13:43:23.960 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Architecture:          amd64
+28-Sep-2025 13:43:23.961 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Java Home:             /opt/java/openjdk/jre
+28-Sep-2025 13:43:23.961 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Version:           1.8.0_402-b06
+28-Sep-2025 13:43:23.961 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log JVM Vendor:            Temurin
+28-Sep-2025 13:43:23.961 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_BASE:         /usr/local/tomcat
+28-Sep-2025 13:43:23.961 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log CATALINA_HOME:         /usr/local/tomcat
+28-Sep-2025 13:43:23.963 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.config.file=/usr/local/tomcat/conf/logging.properties
+28-Sep-2025 13:43:23.963 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+28-Sep-2025 13:43:23.963 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Xms512m
+28-Sep-2025 13:43:23.963 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Xmx1024m
+28-Sep-2025 13:43:23.963 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djdk.tls.ephemeralDHKeySize=2048
+28-Sep-2025 13:43:23.966 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.protocol.handler.pkgs=org.apache.catalina.webresources
+28-Sep-2025 13:43:23.966 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dorg.apache.catalina.security.SecurityListener.UMASK=0027
+28-Sep-2025 13:43:23.967 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dignore.endorsed.dirs=
+28-Sep-2025 13:43:23.967 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.base=/usr/local/tomcat
+28-Sep-2025 13:43:23.968 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Dcatalina.home=/usr/local/tomcat
+28-Sep-2025 13:43:23.968 INFO [main] org.apache.catalina.startup.VersionLoggerListener.log Command line argument: -Djava.io.tmpdir=/usr/local/tomcat/temp
+28-Sep-2025 13:43:23.969 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded Apache Tomcat Native library [1.2.39] using APR version [1.7.0].
+28-Sep-2025 13:43:23.969 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [{4}].
+28-Sep-2025 13:43:23.969 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+28-Sep-2025 13:43:23.993 INFO [main] org.apache.catalina.core.AprLifecycleListener.initializeSSL OpenSSL successfully initialized [OpenSSL 3.0.2 15 Mar 2022]
+28-Sep-2025 13:43:24.174 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["http-nio-8080"]
+28-Sep-2025 13:43:24.215 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["http-nio-8081"]
+28-Sep-2025 13:43:24.216 INFO [main] org.apache.coyote.AbstractProtocol.init Initializing ProtocolHandler ["http-nio-8082"]
+28-Sep-2025 13:43:24.216 INFO [main] org.apache.catalina.startup.Catalina.load Initialization processed in 1263 ms
+28-Sep-2025 13:43:24.273 INFO [main] org.apache.catalina.core.StandardService.startInternal Starting service [Catalina]
+28-Sep-2025 13:43:24.273 INFO [main] org.apache.catalina.core.StandardEngine.startInternal Starting Servlet engine: [Apache Tomcat/8.5.100]
+28-Sep-2025 13:43:24.291 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployDirectory Deploying web application directory [/usr/local/tomcat/webapps/ROOT]
+28-Sep-2025 13:43:25.315 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+2025-09-28 13:43:25 [ERROR] ValidatorPlugIn - Skipping validation rules file from '/WEB-INF/validator-rules.xml'.  No url could be located.
+javax.servlet.ServletException: Skipping validation rules file from '/WEB-INF/validator-rules.xml'.  No url could be located.
+	at org.apache.struts.validator.ValidatorPlugIn.initResources(ValidatorPlugIn.java:231)
+	at org.apache.struts.validator.ValidatorPlugIn.init(ValidatorPlugIn.java:164)
+	at org.apache.struts.action.ActionServlet.initModulePlugIns(ActionServlet.java:871)
+	at org.apache.struts.action.ActionServlet.init(ActionServlet.java:359)
+	at javax.servlet.GenericServlet.init(GenericServlet.java:143)
+	at org.apache.catalina.core.StandardWrapper.initServlet(StandardWrapper.java:1109)
+	at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:1061)
+	at org.apache.catalina.core.StandardWrapper.load(StandardWrapper.java:958)
+	at org.apache.catalina.core.StandardContext.loadOnStartup(StandardContext.java:4625)
+	at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4933)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:171)
+	at org.apache.catalina.core.ContainerBase.addChildInternal(ContainerBase.java:710)
+	at org.apache.catalina.core.ContainerBase.addChild(ContainerBase.java:687)
+	at org.apache.catalina.core.StandardHost.addChild(StandardHost.java:660)
+	at org.apache.catalina.startup.HostConfig.deployDirectory(HostConfig.java:1176)
+	at org.apache.catalina.startup.HostConfig$DeployDirectory.run(HostConfig.java:1889)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:750)
+28-Sep-2025 13:43:25.678 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployDirectory Deployment of web application directory [/usr/local/tomcat/webapps/ROOT] has finished in [1,386] ms
+28-Sep-2025 13:43:25.679 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployDirectory Deploying web application directory [/usr/local/tomcat/webapps/monitor]
+28-Sep-2025 13:43:25.748 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+28-Sep-2025 13:43:25.750 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployDirectory Deployment of web application directory [/usr/local/tomcat/webapps/monitor] has finished in [71] ms
+28-Sep-2025 13:43:25.750 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployDirectory Deploying web application directory [/usr/local/tomcat/webapps/batch]
+28-Sep-2025 13:43:25.815 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+28-Sep-2025 13:43:25.817 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployDirectory Deployment of web application directory [/usr/local/tomcat/webapps/batch] has finished in [67] ms
+28-Sep-2025 13:43:25.821 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-nio-8080"]
+28-Sep-2025 13:43:25.832 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-nio-8081"]
+28-Sep-2025 13:43:25.835 INFO [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["http-nio-8082"]
+28-Sep-2025 13:43:25.839 INFO [main] org.apache.catalina.startup.Catalina.start Server startup in 1621 ms

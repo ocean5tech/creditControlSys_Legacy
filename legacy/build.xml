@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="CreditControlLegacy" default="build" basedir=".">
+    
+    <property name="src.dir" value="src/main/java"/>
+    <property name="web.dir" value="src/main/webapp"/>
+    <property name="build.dir" value="target"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="dist.dir" value="${build.dir}/dist"/>
+    <property name="war.file" value="credit-control-legacy.war"/>
+    
+    <!-- Classpath for compilation -->
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+        <!-- Add servlet API from container -->
+        <fileset dir="/usr/local/tomcat/lib">
+            <include name="servlet-api.jar"/>
+        </fileset>
+    </path>
+    
+    <!-- Clean build directory -->
+    <target name="clean" description="Clean build directory">
+        <delete dir="${build.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+    </target>
+    
+    <!-- Compile Java source -->
+    <target name="compile" depends="clean" description="Compile Java source">
+        <echo message="Compiling Java sources..."/>
+        
+        <javac srcdir="${src.dir}" 
+               destdir="${classes.dir}"
+               classpathref="compile.classpath"
+               includeantruntime="false"
+               encoding="UTF-8"
+               source="1.8"
+               target="1.8"
+               debug="true">
+            <compilerarg value="-Xlint:unchecked"/>
+        </javac>
+        
+        <echo message="Compilation completed successfully"/>
+    </target>
+    
+    <!-- Create WAR file -->
+    <target name="war" depends="compile" description="Create WAR file">
+        <echo message="Creating WAR file..."/>
+        
+        <war destfile="${dist.dir}/${war.file}" webxml="${web.dir}/WEB-INF/web.xml">
+            <fileset dir="${web.dir}">
+                <exclude name="WEB-INF/web.xml"/>
+            </fileset>
+            <lib dir="${lib.dir}">
+                <include name="*.jar"/>
+            </lib>
+            <classes dir="${classes.dir}"/>
+        </war>
+        
+        <echo message="WAR file created: ${dist.dir}/${war.file}"/>
+    </target>
+    
+    <!-- Copy compiled classes for container deployment -->
+    <target name="deploy-classes" depends="compile" description="Copy classes for container deployment">
+        <echo message="Copying compiled classes..."/>
+        
+        <copy todir="${web.dir}/WEB-INF/classes">
+            <fileset dir="${classes.dir}"/>
+        </copy>
+        
+        <echo message="Classes copied to webapp"/>
+    </target>
+    
+    <!-- Build target -->
+    <target name="build" depends="compile, deploy-classes, war" description="Complete build">
+        <echo message="Build completed successfully"/>
+        <echo message="Classes available in: ${web.dir}/WEB-INF/classes"/>
+        <echo message="WAR file available in: ${dist.dir}/${war.file}"/>
+    </target>
+    
+    <!-- Test database connection -->
+    <target name="test-db" depends="compile" description="Test database connectivity">
+        <echo message="Testing database connectivity..."/>
+        
+        <java classname="com.creditcontrol.dao.DatabaseConnection" 
+              classpathref="compile.classpath"
+              fork="true">
+            <classpath>
+                <pathelement path="${classes.dir}"/>
+            </classpath>
+        </java>
+    </target>
+    
+    <!-- Show help -->
+    <target name="help" description="Show available targets">
+        <echo message="Available targets:"/>
+        <echo message="  clean        - Clean build directory"/>
+        <echo message="  compile      - Compile Java sources"/>
+        <echo message="  war          - Create WAR file"/>
+        <echo message="  deploy-classes - Copy classes to webapp"/>
+        <echo message="  build        - Complete build (default)"/>
+        <echo message="  test-db      - Test database connectivity"/>
+        <echo message="  help         - Show this help"/>
+    </target>
+    
+</project>
