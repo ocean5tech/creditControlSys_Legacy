@@ -61,7 +61,7 @@
         try {
             // Database connection
             Class.forName("org.postgresql.Driver");
-            conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
+            conn = DriverManager.getConnection("jdbc:postgresql://35.77.54.203:5432/creditcontrol", "creditapp", "secure123");
             
             // Query all customers with their risk assessments
             String sql = "SELECT c.customer_code, c.company_name, c.industry, " +

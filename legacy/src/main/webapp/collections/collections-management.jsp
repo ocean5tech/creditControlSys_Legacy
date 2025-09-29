@@ -77,7 +77,7 @@
         try {
             // Database connection
             Class.forName("org.postgresql.Driver");
-            conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
+            conn = DriverManager.getConnection("jdbc:postgresql://35.77.54.203:5432/creditcontrol", "creditapp", "secure123");
             
             // Process actions
             if ("contact".equals(action) && targetCustomer != null && contactNotes != null) {
@@ -197,7 +197,7 @@
                 account.put("assignedOfficer", rs.getString("assigned_officer"));
                 account.put("contactAttempts", rs.getInt("contact_attempts"));
                 
-                Date lastContactDate = rs.getDate("last_contact_date");
+                java.sql.Date lastContactDate = rs.getDate("last_contact_date");
                 if (lastContactDate != null) {
                     account.put("lastContact", sdf.format(lastContactDate));
                 } else {
@@ -252,7 +252,7 @@
                 log.put("notes", rs.getString("notes"));
                 log.put("followUpRequired", rs.getBoolean("follow_up_required"));
                 
-                Date followUpDate = rs.getDate("follow_up_date");
+                java.sql.Date followUpDate = rs.getDate("follow_up_date");
                 if (followUpDate != null) {
                     log.put("followUpDate", sdf.format(followUpDate));
                 } else {

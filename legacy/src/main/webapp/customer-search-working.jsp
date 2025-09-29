@@ -102,7 +102,7 @@
             try {
                 // Database connection
                 Class.forName("org.postgresql.Driver");
-                conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
+                conn = DriverManager.getConnection("jdbc:postgresql://35.77.54.203:5432/creditcontrol", "creditapp", "secure123");
                 
                 // Build dynamic SQL query
                 StringBuilder sql = new StringBuilder("SELECT customer_id, customer_code, company_name, contact_person, phone, industry, status FROM customers WHERE 1=1");

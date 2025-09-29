@@ -80,7 +80,7 @@
         try {
             // Database connection
             Class.forName("org.postgresql.Driver");
-            conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
+            conn = DriverManager.getConnection("jdbc:postgresql://35.77.54.203:5432/creditcontrol", "creditapp", "secure123");
             
             // Get business metrics using the database function
             cstmt = conn.prepareCall("SELECT * FROM get_business_metrics()");
@@ -189,7 +189,7 @@
         <!-- Page title -->
         <div class="reports-header">
             <h2>Reports Dashboard</h2>
-            <p>Business Intelligence and Reporting Center - Real-time data from <%= new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()) %></p>
+            <p>Business Intelligence and Reporting Center - Real-time data from <%= new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new java.util.Date()) %></p>
         </div>
         
         <!-- Action result message -->
@@ -283,10 +283,13 @@
             <h3>Available Reports</h3>
             <div class="report-grid">
                 <% 
-                Map<String, List<Map<String, Object>>> reportsByCategory = new HashMap<>();
+                Map<String, List<Map<String, Object>>> reportsByCategory = new HashMap<String, List<Map<String, Object>>>();
                 for (Map<String, Object> report : availableReports) {
                     String category = (String)report.get("category");
-                    reportsByCategory.computeIfAbsent(category, k -> new ArrayList<>()).add(report);
+                    if (!reportsByCategory.containsKey(category)) {
+                        reportsByCategory.put(category, new ArrayList<Map<String, Object>>());
+                    }
+                    reportsByCategory.get(category).add(report);
                 }
                 
                 for (Map.Entry<String, List<Map<String, Object>>> entry : reportsByCategory.entrySet()) {

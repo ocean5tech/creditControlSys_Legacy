@@ -17,7 +17,7 @@ import java.util.Map;
 public class RiskAssessmentEngine {
     
     // Database connection details
-    private static final String DB_URL = "jdbc:postgresql://172.31.19.10:5432/creditcontrol";
+    private static final String DB_URL = "jdbc:postgresql://35.77.54.203:5432/creditcontrol";
     private static final String DB_USER = "creditapp";
     private static final String DB_PASSWORD = "secure123";
     
