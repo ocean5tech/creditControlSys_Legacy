@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.math.BigDecimal, java.util.*, java.text.SimpleDateFormat" %>
+<%@ page import="java.math.BigDecimal, java.sql.*, java.util.*, java.text.SimpleDateFormat" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -37,6 +37,8 @@
         .status-active { color: #28a745; font-weight: bold; }
         .status-pending { color: #ffc107; font-weight: bold; }
         .status-failed { color: #dc3545; font-weight: bold; }
+        .success-message { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; margin: 15px 0; border-radius: 3px; }
+        .error-message { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; margin: 15px 0; border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -47,320 +49,309 @@
     
     <div id="main-content">
         <%
+        // Database connection and real data operations
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        CallableStatement cstmt = null;
+        
         // Get parameters
         String reportType = request.getParameter("reportType");
         String dateRange = request.getParameter("dateRange");
         String action = request.getParameter("action");
         String reportId = request.getParameter("reportId");
         
-        // Simulate business metrics data
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        Date currentDate = new Date();
+        // Business metrics from database
+        BigDecimal totalCreditLimits = BigDecimal.ZERO;
+        BigDecimal totalOutstanding = BigDecimal.ZERO;
+        BigDecimal totalAvailableCredit = BigDecimal.ZERO;
+        BigDecimal overdueAmounts = BigDecimal.ZERO;
+        BigDecimal monthlyPayments = BigDecimal.ZERO;
+        BigDecimal pendingPayments = BigDecimal.ZERO;
+        int totalCustomers = 0;
+        int activeCustomers = 0;
+        int overdueAccounts = 0;
+        int highRiskAccounts = 0;
         
-        // This month's statistical data
-        BigDecimal totalCreditLimits = new BigDecimal("2500000");
-        BigDecimal totalOutstanding = new BigDecimal("875000");
-        BigDecimal monthlyPayments = new BigDecimal("425000");
-        BigDecimal overdueAmounts = new BigDecimal("135000");
-        int totalCustomers = 156;
-        int activeCustomers = 142;
-        int overdueAccounts = 8;
-        int highRiskAccounts = 3;
-        
-        // Trend data (compared to last month)
-        double creditTrend = 5.2;  // Growth 5.2%
-        double paymentTrend = -2.1; // Decline 2.1%  
-        double overdueTrend = 15.6; // Growth 15.6%
-        double riskTrend = -8.3; // Decline 8.3%
-        
-        // Predefined report list
         List<Map<String, Object>> availableReports = new ArrayList<>();
-        
-        // Credit control report
-        Map<String, Object> report1 = new HashMap<>();
-        report1.put("id", "CREDIT_SUMMARY");
-        report1.put("name", "Credit Control Monthly Summary");
-        report1.put("description", "Monthly summary report of customer credit limits, usage, and risk assessment");
-        report1.put("category", "Credit Management");
-        report1.put("frequency", "Monthly");
-        report1.put("lastRun", "2025-01-20");
-        report1.put("format", "PDF/Excel");
-        availableReports.add(report1);
-        
-        Map<String, Object> report2 = new HashMap<>();
-        report2.put("id", "PAYMENT_ANALYSIS");
-        report2.put("name", "Payment Trend Analysis");
-        report2.put("description", "Customer payment patterns, delay analysis, and cash flow forecasting");
-        report2.put("category", "Payment Management");
-        report2.put("frequency", "Weekly");
-        report2.put("lastRun", "2025-01-22");
-        report2.put("format", "PDF/Excel");
-        availableReports.add(report2);
-        
-        Map<String, Object> report3 = new HashMap<>();
-        report3.put("id", "RISK_ASSESSMENT");
-        report3.put("name", "Risk Assessment Report");
-        report3.put("description", "Customer risk level distribution, risk change trends, and early warning analysis");
-        report3.put("category", "Risk Management");
-        report3.put("frequency", "Bi-weekly");
-        report3.put("lastRun", "2025-01-18");
-        report3.put("format", "PDF");
-        availableReports.add(report3);
-        
-        Map<String, Object> report4 = new HashMap<>();
-        report4.put("id", "COLLECTIONS_REPORT");
-        report4.put("name", "Overdue Collections Report");
-        report4.put("description", "Overdue account status, collection effectiveness, and legal escalation situations");
-        report4.put("category", "Collections Management");
-        report4.put("frequency", "Monthly");
-        report4.put("lastRun", "2025-01-19");
-        report4.put("format", "PDF/Excel");
-        availableReports.add(report4);
-        
-        Map<String, Object> report5 = new HashMap<>();
-        report5.put("id", "EXECUTIVE_DASHBOARD");
-        report5.put("name", "Executive Dashboard");
-        report5.put("description", "Senior management key indicators, business trends, and decision support data");
-        report5.put("category", "Management Decision");
-        report5.put("frequency", "Daily");
-        report5.put("lastRun", "2025-01-23");
-        report5.put("format", "PDF");
-        availableReports.add(report5);
-        
-        Map<String, Object> report6 = new HashMap<>();
-        report6.put("id", "REGULATORY_COMPLIANCE");
-        report6.put("name", "Regulatory Compliance Report");
-        report6.put("description", "Regulatory compliance checks, risk exposure, and compliance indicators");
-        report6.put("category", "Compliance Management");
-        report6.put("frequency", "Quarterly");
-        report6.put("lastRun", "2025-01-15");
-        report6.put("format", "PDF");
-        availableReports.add(report6);
-        
-        // Scheduled report tasks
-        List<Map<String, Object>> scheduledReports = new ArrayList<>();
-        
-        Map<String, Object> schedule1 = new HashMap<>();
-        schedule1.put("reportName", "Credit Control Monthly Summary");
-        schedule1.put("schedule", "1st of every month 09:00");
-        schedule1.put("recipients", "General Manager, CFO, Risk Manager");
-        schedule1.put("status", "ACTIVE");
-        schedule1.put("nextRun", "2025-02-01 09:00");
-        scheduledReports.add(schedule1);
-        
-        Map<String, Object> schedule2 = new HashMap<>();
-        schedule2.put("reportName", "Executive Dashboard");
-        schedule2.put("schedule", "Daily 08:00");
-        schedule2.put("recipients", "Senior Management Team");
-        schedule2.put("status", "ACTIVE");
-        schedule2.put("nextRun", "2025-01-24 08:00");
-        scheduledReports.add(schedule2);
-        
-        Map<String, Object> schedule3 = new HashMap<>();
-        schedule3.put("reportName", "Payment Trend Analysis");
-        schedule3.put("schedule", "Every Monday 10:00");
-        schedule3.put("recipients", "Finance Department");
-        schedule3.put("status", "PENDING");
-        schedule3.put("nextRun", "2025-01-27 10:00");
-        scheduledReports.add(schedule3);
-        
-        // Process report generation requests
+        String errorMessage = null;
         String actionResult = null;
-        if ("generate".equals(action) && reportId != null) {
-            // Simulate report generation
-            for (Map<String, Object> report : availableReports) {
-                if (reportId.equals(report.get("id"))) {
-                    actionResult = "Report '" + report.get("name") + "' generated successfully! Sent to management email.";
-                    break;
-                }
+        
+        try {
+            // Database connection
+            Class.forName("org.postgresql.Driver");
+            conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
+            
+            // Get business metrics using the database function
+            cstmt = conn.prepareCall("SELECT * FROM get_business_metrics()");
+            rs = cstmt.executeQuery();
+            
+            if (rs.next()) {
+                totalCreditLimits = rs.getBigDecimal("total_credit_limits");
+                totalOutstanding = rs.getBigDecimal("total_outstanding");
+                totalAvailableCredit = rs.getBigDecimal("total_available_credit");
+                overdueAmounts = rs.getBigDecimal("overdue_amounts");
+                monthlyPayments = rs.getBigDecimal("monthly_payments");
+                pendingPayments = rs.getBigDecimal("pending_payments");
+                totalCustomers = rs.getInt("total_customers");
+                activeCustomers = rs.getInt("active_customers");
+                overdueAccounts = rs.getInt("overdue_accounts");
+                highRiskAccounts = rs.getInt("high_risk_accounts");
             }
+            rs.close();
+            cstmt.close();
+            
+            // Process report actions
+            if ("generate".equals(action) && reportId != null) {
+                // Simulate report generation
+                actionResult = "Report " + reportId + " generation initiated. Report will be available in the downloads section within 5 minutes.";
+                
+                // Update last run date
+                String updateReportSql = "UPDATE reports SET last_run_date = CURRENT_TIMESTAMP WHERE report_id = ?";
+                stmt = conn.prepareStatement(updateReportSql);
+                stmt.setInt(1, Integer.parseInt(reportId));
+                stmt.executeUpdate();
+                stmt.close();
+                
+            } else if ("schedule".equals(action) && reportId != null) {
+                actionResult = "Report " + reportId + " has been scheduled for regular generation.";
+                
+            } else if ("download".equals(action) && reportId != null) {
+                actionResult = "Report " + reportId + " download started. Check your downloads folder.";
+            }
+            
+            // Fetch available reports from database
+            String reportsSql = "SELECT report_id, report_name, report_description, report_category, " +
+                              "report_frequency, report_format, last_run_date, next_run_date, status " +
+                              "FROM reports ORDER BY report_category, report_name";
+            
+            stmt = conn.prepareStatement(reportsSql);
+            rs = stmt.executeQuery();
+            
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            while (rs.next()) {
+                Map<String, Object> report = new HashMap<>();
+                report.put("id", rs.getInt("report_id"));
+                report.put("name", rs.getString("report_name"));
+                report.put("description", rs.getString("report_description"));
+                report.put("category", rs.getString("report_category"));
+                report.put("frequency", rs.getString("report_frequency"));
+                report.put("format", rs.getString("report_format"));
+                report.put("status", rs.getString("status"));
+                
+                Timestamp lastRun = rs.getTimestamp("last_run_date");
+                if (lastRun != null) {
+                    report.put("lastRun", sdf.format(lastRun));
+                } else {
+                    report.put("lastRun", "Never");
+                }
+                
+                Timestamp nextRun = rs.getTimestamp("next_run_date");
+                if (nextRun != null) {
+                    report.put("nextRun", sdf.format(nextRun));
+                } else {
+                    report.put("nextRun", "Not scheduled");
+                }
+                
+                availableReports.add(report);
+            }
+            rs.close();
+            stmt.close();
+            
+        } catch (Exception e) {
+            errorMessage = "Database connection error: " + e.getMessage();
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+            if (cstmt != null) try { cstmt.close(); } catch (SQLException e) {}
+            if (conn != null) try { conn.close(); } catch (SQLException e) {}
+        }
+        
+        // Calculate derived metrics
+        BigDecimal utilizationRate = BigDecimal.ZERO;
+        if (totalCreditLimits.compareTo(BigDecimal.ZERO) > 0) {
+            utilizationRate = totalOutstanding.divide(totalCreditLimits, 4, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal("100"));
+        }
+        
+        BigDecimal overdueRate = BigDecimal.ZERO;
+        if (totalOutstanding.compareTo(BigDecimal.ZERO) > 0) {
+            overdueRate = overdueAmounts.divide(totalOutstanding, 4, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal("100"));
         }
         %>
         
+        <% if (errorMessage != null) { %>
+        <div class="error-message">
+            <strong>Error:</strong> <%= errorMessage %>
+        </div>
+        <% } else { %>
+        
         <!-- Page title -->
         <div class="reports-header">
-            <h2>Management Reporting Center</h2>
-            <p>Management Reporting Center - Providing key business metrics and decision support for management</p>
+            <h2>Reports Dashboard</h2>
+            <p>Business Intelligence and Reporting Center - Real-time data from <%= new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()) %></p>
         </div>
         
-        <!-- Key metrics overview -->
+        <!-- Action result message -->
+        <% if (actionResult != null) { %>
+        <div class="success-message">
+            <%= actionResult %>
+        </div>
+        <% } %>
+        
+        <!-- Business metrics overview -->
         <div class="report-category">
-            <h3>📊 Key Business Metrics</h3>
+            <h3>Business Performance Metrics</h3>
             <div class="summary-metrics">
                 <div class="metric-box">
-                    <div class="metric-value" style="color: #007bff;">$<%= String.format("%,.0f", totalCreditLimits) %></div>
+                    <div class="metric-value" style="color: #007bff;">$<%= String.format("%,.2f", totalCreditLimits) %></div>
                     <div class="metric-label">Total Credit Limits</div>
-                    <div class="<%= creditTrend > 0 ? "trend-positive" : "trend-negative" %>">
-                        <%= creditTrend > 0 ? "↗" : "↘" %> <%= String.format("%.1f", Math.abs(creditTrend)) %>%
-                    </div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value" style="color: #28a745;">$<%= String.format("%,.0f", monthlyPayments) %></div>
-                    <div class="metric-label">Monthly Collections</div>
-                    <div class="<%= paymentTrend > 0 ? "trend-positive" : "trend-negative" %>">
-                        <%= paymentTrend > 0 ? "↗" : "↘" %> <%= String.format("%.1f", Math.abs(paymentTrend)) %>%
-                    </div>
+                    <div class="metric-value" style="color: #dc3545;">$<%= String.format("%,.2f", totalOutstanding) %></div>
+                    <div class="metric-label">Total Outstanding</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value" style="color: #dc3545;">$<%= String.format("%,.0f", overdueAmounts) %></div>
-                    <div class="metric-label">Overdue Amount</div>
-                    <div class="<%= overdueTrend > 0 ? "trend-negative" : "trend-positive" %>">
-                        <%= overdueTrend > 0 ? "↗" : "↘" %> <%= String.format("%.1f", Math.abs(overdueTrend)) %>%
-                    </div>
+                    <div class="metric-value" style="color: #28a745;">$<%= String.format("%,.2f", totalAvailableCredit) %></div>
+                    <div class="metric-label">Available Credit</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value" style="color: #ffc107;"><%= highRiskAccounts %></div>
-                    <div class="metric-label">High Risk Customers</div>
-                    <div class="<%= riskTrend > 0 ? "trend-negative" : "trend-positive" %>">
-                        <%= riskTrend > 0 ? "↗" : "↘" %> <%= String.format("%.1f", Math.abs(riskTrend)) %>%
-                    </div>
+                    <div class="metric-value" style="color: #fd7e14;">$<%= String.format("%,.2f", overdueAmounts) %></div>
+                    <div class="metric-label">Overdue Amounts</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value" style="color: #17a2b8;"><%= String.format("%.1f", totalOutstanding.divide(totalCreditLimits, 3, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal("100"))) %>%</div>
-                    <div class="metric-label">Credit Utilization Rate</div>
-                    <div class="trend-neutral">Stable</div>
+                    <div class="metric-value" style="color: #6f42c1;"><%= String.format("%.1f", utilizationRate) %>%</div>
+                    <div class="metric-label">Credit Utilization</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value" style="color: #6c757d;"><%= activeCustomers %>/<%= totalCustomers %></div>
-                    <div class="metric-label">Active Customers</div>
-                    <div class="trend-positive">↗ 3.2%</div>
+                    <div class="metric-value" style="color: #e83e8c;"><%= String.format("%.1f", overdueRate) %>%</div>
+                    <div class="metric-label">Overdue Rate</div>
                 </div>
             </div>
         </div>
         
-        <!-- Operation result -->
-        <% if (actionResult != null) { %>
-        <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; margin: 15px 0; border-radius: 3px;">
-            <strong>✅ <%= actionResult %></strong>
-        </div>
-        <% } %>
-        
-        <!-- Report filters -->
-        <div class="filter-panel">
-            <strong>📅 Report Filters:</strong>
-            <select name="category" onchange="filterReports()">
-                <option value="">All Categories</option>
-                <option value="Credit Management">Credit Management</option>
-                <option value="Payment Management">Payment Management</option>
-                <option value="Risk Management">Risk Management</option>
-                <option value="Collections Management">Collections Management</option>
-                <option value="Management Decision">Management Decision</option>
-                <option value="Compliance Management">Compliance Management</option>
-            </select>
-            
-            <select name="frequency" onchange="filterReports()">
-                <option value="">All Frequencies</option>
-                <option value="Daily">Daily</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Monthly">Monthly</option>
-                <option value="Quarterly">Quarterly</option>
-            </select>
-            
-            <input type="date" name="startDate" value="2025-01-01">
-            <input type="date" name="endDate" value="2025-01-31">
-            
-            <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
-            <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
-        </div>
-        
-        <!-- Predefined reports -->
+        <!-- Customer metrics -->
         <div class="report-category">
-            <h3>📋 Available Reports</h3>
-            <div class="report-grid">
-                <% for (Map<String, Object> report : availableReports) { %>
-                <div class="report-card">
-                    <h4><%= report.get("name") %></h4>
-                    <p><%= report.get("description") %></p>
-                    <p><strong>Category:</strong> <%= report.get("category") %> | 
-                       <strong>Frequency:</strong> <%= report.get("frequency") %> | 
-                       <strong>Format:</strong> <%= report.get("format") %></p>
-                    <p><strong>Last Run:</strong> <%= report.get("lastRun") %></p>
-                    
-                    <div style="margin-top: 15px;">
-                        <a href="reports-dashboard.jsp?action=generate&reportId=<%= report.get("id") %>" class="btn btn-success">Generate Report</a>
-                        <button class="btn btn-info" onclick="previewReport('<%= report.get("id") %>')">Preview</button>
-                        <button class="btn btn-warning" onclick="scheduleReport('<%= report.get("id") %>')">Schedule Settings</button>
-                        <button class="btn btn-secondary" onclick="downloadTemplate('<%= report.get("id") %>')">Download Template</button>
+            <h3>Customer Portfolio Analysis</h3>
+            <div class="summary-metrics">
+                <div class="metric-box">
+                    <div class="metric-value" style="color: #17a2b8;"><%= totalCustomers %></div>
+                    <div class="metric-label">Total Customers</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" style="color: #28a745;"><%= activeCustomers %></div>
+                    <div class="metric-label">Active Customers</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" style="color: #ffc107;"><%= overdueAccounts %></div>
+                    <div class="metric-label">Overdue Accounts</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" style="color: #dc3545;"><%= highRiskAccounts %></div>
+                    <div class="metric-label">High Risk Accounts</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment metrics -->
+        <div class="report-category">
+            <h3>Payment Performance</h3>
+            <div class="summary-metrics">
+                <div class="metric-box">
+                    <div class="metric-value" style="color: #28a745;">$<%= String.format("%,.2f", monthlyPayments) %></div>
+                    <div class="metric-label">Monthly Payments (30 days)</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" style="color: #ffc107;">$<%= String.format("%,.2f", pendingPayments) %></div>
+                    <div class="metric-label">Pending Payments</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value" style="color: #17a2b8;">
+                        <% if (totalOutstanding.compareTo(BigDecimal.ZERO) > 0) { %>
+                            <%= String.format("%.1f", monthlyPayments.divide(totalOutstanding, 4, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal("100"))) %>%
+                        <% } else { %>
+                            0.0%
+                        <% } %>
                     </div>
+                    <div class="metric-label">Monthly Collection Rate</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Available reports -->
+        <div class="report-category">
+            <h3>Available Reports</h3>
+            <div class="report-grid">
+                <% 
+                Map<String, List<Map<String, Object>>> reportsByCategory = new HashMap<>();
+                for (Map<String, Object> report : availableReports) {
+                    String category = (String)report.get("category");
+                    reportsByCategory.computeIfAbsent(category, k -> new ArrayList<>()).add(report);
+                }
+                
+                for (Map.Entry<String, List<Map<String, Object>>> entry : reportsByCategory.entrySet()) {
+                    String category = entry.getKey();
+                    List<Map<String, Object>> reports = entry.getValue();
+                %>
+                
+                <div class="report-card">
+                    <h4><%= category %></h4>
+                    <% for (Map<String, Object> report : reports) { %>
+                    <div style="margin: 10px 0; padding: 10px; border: 1px solid #eee; border-radius: 3px;">
+                        <strong><%= report.get("name") %></strong><br>
+                        <small><%= report.get("description") %></small><br>
+                        <small>
+                            Frequency: <%= report.get("frequency") %> | 
+                            Format: <%= report.get("format") %> | 
+                            Last Run: <%= report.get("lastRun") %>
+                        </small><br>
+                        <div style="margin-top: 8px;">
+                            <a href="reports-dashboard.jsp?action=generate&reportId=<%= report.get("id") %>" 
+                               class="btn btn-primary">Generate Now</a>
+                            <a href="reports-dashboard.jsp?action=download&reportId=<%= report.get("id") %>" 
+                               class="btn btn-success">Download</a>
+                            <% if ("ACTIVE".equals(report.get("status"))) { %>
+                            <span class="status-active">● Active</span>
+                            <% } else { %>
+                            <span class="status-pending">● Pending</span>
+                            <% } %>
+                        </div>
+                    </div>
+                    <% } %>
                 </div>
                 <% } %>
             </div>
         </div>
         
-        <!-- Chart area -->
-        <div class="report-category">
-            <h3>📈 Trend Analysis Charts</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div>
-                    <h4>Monthly Collection Trends</h4>
-                    <div class="chart-placeholder">
-                        [Monthly Collection Trend Chart Placeholder]<br>
-                        <small>Will integrate chart library (e.g. Chart.js) in actual deployment</small>
-                    </div>
-                </div>
-                <div>
-                    <h4>Risk Level Distribution</h4>
-                    <div class="chart-placeholder">
-                        [Risk Level Distribution Pie Chart Placeholder]<br>
-                        <small>Will integrate chart library in actual deployment</small>
-                    </div>
-                </div>
-                <div>
-                    <h4>Overdue Account Trends</h4>
-                    <div class="chart-placeholder">
-                        [Overdue Account Trend Chart Placeholder]<br>
-                        <small>Will integrate chart library in actual deployment</small>
-                    </div>
-                </div>
-                <div>
-                    <h4>Customer Growth Analysis</h4>
-                    <div class="chart-placeholder">
-                        [Customer Growth Analysis Chart Placeholder]<br>
-                        <small>Will integrate chart library in actual deployment</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Scheduled report management -->
+        <!-- Scheduled reports -->
         <div class="scheduled-reports">
-            <h3>⏰ Scheduled Report Tasks</h3>
+            <h3>Scheduled Reports</h3>
             <table class="schedule-table">
                 <thead>
                     <tr>
                         <th>Report Name</th>
-                        <th>Execution Schedule</th>
-                        <th>Recipients</th>
-                        <th>Status</th>
+                        <th>Category</th>
+                        <th>Frequency</th>
+                        <th>Last Run</th>
                         <th>Next Run</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <% for (Map<String, Object> schedule : scheduledReports) { 
-                       String status = (String)schedule.get("status");
-                    %>
+                    <% for (Map<String, Object> report : availableReports) { %>
                     <tr>
-                        <td><%= schedule.get("reportName") %></td>
-                        <td><%= schedule.get("schedule") %></td>
-                        <td><%= schedule.get("recipients") %></td>
-                        <td class="status-<%= status.toLowerCase() %>">
-                            <% if ("ACTIVE".equals(status)) { %>
-                                Running
-                            <% } else if ("PENDING".equals(status)) { %>
-                                Waiting
-                            <% } else { %>
-                                Stopped
-                            <% } %>
+                        <td><%= report.get("name") %></td>
+                        <td><%= report.get("category") %></td>
+                        <td><%= report.get("frequency") %></td>
+                        <td><%= report.get("lastRun") %></td>
+                        <td><%= report.get("nextRun") %></td>
+                        <td class="status-<%= ((String)report.get("status")).toLowerCase() %>">
+                            <%= report.get("status") %>
                         </td>
-                        <td><%= schedule.get("nextRun") %></td>
                         <td>
-                            <% if ("ACTIVE".equals(status)) { %>
-                                <button class="btn btn-warning" onclick="pauseSchedule()">Pause</button>
-                            <% } else { %>
-                                <button class="btn btn-success" onclick="resumeSchedule()">Start</button>
-                            <% } %>
-                            <button class="btn btn-secondary" onclick="editSchedule()">Edit</button>
+                            <a href="reports-dashboard.jsp?action=generate&reportId=<%= report.get("id") %>" 
+                               class="btn btn-primary">Run Now</a>
                         </td>
                     </tr>
                     <% } %>
@@ -368,24 +359,36 @@
             </table>
         </div>
         
-        <!-- Management operations -->
+        <!-- Report actions -->
         <div class="report-actions">
-            <h3>🔧 Management Operations</h3>
-            <button class="btn btn-primary" onclick="generateBatchReports()">Generate Batch Reports</button>
-            <button class="btn btn-success" onclick="exportAllData()">Export All Data</button>
-            <button class="btn btn-warning" onclick="createCustomReport()">Create Custom Report</button>
-            <button class="btn btn-info" onclick="viewAuditLog()">View Audit Log</button>
-            <button class="btn btn-secondary" onclick="systemSettings()">System Settings</button>
+            <h4>Quick Actions</h4>
+            <p>Generate custom reports or access archived reports:</p>
+            <a href="#" class="btn btn-info" onclick="alert('Custom report builder feature requires additional implementation')">Custom Report Builder</a>
+            <a href="#" class="btn btn-secondary" onclick="alert('Report archive feature requires additional implementation')">Report Archive</a>
+            <a href="#" class="btn btn-warning" onclick="alert('Data export feature requires additional implementation')">Export Data</a>
         </div>
         
-        <!-- Navigation buttons -->
+        <!-- Data visualization placeholder -->
+        <div class="report-category">
+            <h3>Business Intelligence Charts</h3>
+            <div class="chart-placeholder">
+                <div style="text-align: center;">
+                    <p><strong>Chart Visualization Area</strong></p>
+                    <p>Credit utilization trends, payment patterns, and risk analysis charts would be displayed here.</p>
+                    <p>Integration with charting libraries (Chart.js, D3.js) required for full implementation.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick navigation -->
         <div style="margin: 20px 0; text-align: center;">
-            <a href="../risk/risk-assessment.jsp" class="btn btn-primary">Risk Assessment</a>
-            <a href="../collections/collections-management.jsp" class="btn btn-warning">Collections Management</a>
-            <a href="../payment/payment-tracking.jsp" class="btn btn-info">Payment Tracking</a>
-            <a href="../customer-search-working.jsp" class="btn btn-secondary">Customer Search</a>
+            <a href="../customer-search-working.jsp" class="btn btn-primary">Customer Search</a>
+            <a href="../payment/payment-tracking.jsp" class="btn btn-success">Payment Tracking</a>
+            <a href="../collections/collections-management.jsp" class="btn btn-warning">Collections</a>
+            <a href="../risk/risk-assessment.jsp" class="btn btn-info">Risk Assessment</a>
         </div>
         
+        <% } %>
     </div>
     
     <div id="footer">
@@ -393,69 +396,18 @@
     </div>
     
     <script>
-        function previewReport(reportId) {
-            alert('Generating report preview: ' + reportId + '\nPreview will open in new window.');
-        }
-        
-        function scheduleReport(reportId) {
-            var frequency = prompt('Please enter scheduling frequency (daily/weekly/monthly):', 'monthly');
-            if (frequency) {
-                alert('Report ' + reportId + ' has been set for ' + frequency + ' scheduled execution.');
-            }
-        }
-        
-        function downloadTemplate(reportId) {
-            alert('Downloading report template: ' + reportId + '\nTemplate file will be automatically downloaded.');
-        }
-        
-        function generateBatchReports() {
-            if (confirm('Are you sure you want to generate all scheduled reports? This may take several minutes.')) {
-                alert('Batch report generation started, email notification will be sent upon completion.');
-            }
-        }
-        
-        function exportAllData() {
-            if (confirm('Are you sure you want to export all credit control data?')) {
-                alert('Data export in progress, Excel file will be sent to your email.');
-            }
-        }
-        
-        function createCustomReport() {
-            alert('Redirecting to custom report designer...');
-        }
-        
-        function viewAuditLog() {
-            alert('Displaying system audit log, including all user operation records.');
-        }
-        
-        function systemSettings() {
-            alert('Opening system settings panel, configure report parameters and user permissions.');
-        }
-        
-        function filterReports() {
-            alert('Applying report filter criteria...');
-        }
-        
-        function applyFilters() {
-            alert('Filter criteria applied, reloading report list.');
-        }
-        
-        function resetFilters() {
-            alert('Filter criteria have been reset.');
+        // Auto-refresh metrics every 5 minutes
+        setTimeout(function() {
             location.reload();
-        }
+        }, 300000);
         
-        function pauseSchedule() {
-            alert('Scheduled task has been paused.');
+        // Show current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString();
+            document.title = 'Reports Dashboard - ' + timeString;
         }
-        
-        function resumeSchedule() {
-            alert('Scheduled task has been started.');
-        }
-        
-        function editSchedule() {
-            alert('Opening scheduled task editor...');
-        }
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>

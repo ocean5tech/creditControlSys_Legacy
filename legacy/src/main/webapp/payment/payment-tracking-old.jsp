@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.math.BigDecimal, java.sql.*, java.util.*, java.text.SimpleDateFormat" %>
+<%@ page import="java.math.BigDecimal, java.util.*, java.text.SimpleDateFormat" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -44,11 +44,6 @@
     
     <div id="main-content">
         <%
-        // Database connection and real data operations
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
         // Get parameters
         String customerCode = request.getParameter("customerCode");
         if (customerCode == null || customerCode.trim().isEmpty()) {
@@ -61,159 +56,98 @@
         String paymentReference = request.getParameter("paymentReference");
         String notes = request.getParameter("notes");
         
-        // Real customer data from database
-        String companyName = "";
-        BigDecimal currentBalance = BigDecimal.ZERO;
-        BigDecimal creditLimit = BigDecimal.ZERO;
-        BigDecimal availableCredit = BigDecimal.ZERO;
-        String accountStatus = "";
-        String errorMessage = null;
+        // Simulate customer data
+        String companyName = "ABC Manufacturing Ltd";
+        BigDecimal currentBalance = new BigDecimal("45000");
+        BigDecimal creditLimit = new BigDecimal("200000");
+        String accountStatus = "ACTIVE";
         
-        // Payment processing result
+        // Process payment records
         boolean paymentRecorded = false;
         String resultMessage = null;
         String messageType = "success";
         
-        // Payment statistics
+        if ("record".equals(action) && paymentAmount != null && !paymentAmount.trim().isEmpty()) {
+            try {
+                BigDecimal amount = new BigDecimal(paymentAmount);
+                if (amount.compareTo(BigDecimal.ZERO) > 0) {
+                    // Simple validation successful
+                    paymentRecorded = true;
+                    resultMessage = "Payment record created successfully. Payment amount: $" + String.format("%,.2f", amount) + ", awaiting confirmation.";
+                    
+                    // Simulate balance update
+                    currentBalance = currentBalance.subtract(amount);
+                    if (currentBalance.compareTo(BigDecimal.ZERO) < 0) {
+                        currentBalance = BigDecimal.ZERO;
+                    }
+                } else {
+                    resultMessage = "Payment amount must be greater than 0";
+                    messageType = "error";
+                }
+            } catch (NumberFormatException e) {
+                resultMessage = "Payment amount format error";
+                messageType = "error";
+            }
+        }
+        
+        // Simulate payment history data
+        List<Map<String, Object>> paymentHistory = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        Calendar cal = Calendar.getInstance();
+        
+        // Historical payment 1
+        Map<String, Object> payment1 = new HashMap<>();
+        payment1.put("paymentId", "PAY-2025-001");
+        cal.add(Calendar.DAY_OF_MONTH, -5);
+        payment1.put("paymentDate", sdf.format(cal.getTime()));
+        payment1.put("amount", new BigDecimal("25000"));
+        payment1.put("method", "Bank Transfer");
+        payment1.put("reference", "TXN20250120001");
+        payment1.put("status", "CONFIRMED");
+        payment1.put("notes", "Regular payment");
+        paymentHistory.add(payment1);
+        
+        // Historical payment 2
+        Map<String, Object> payment2 = new HashMap<>();
+        payment2.put("paymentId", "PAY-2025-002");
+        cal.add(Calendar.DAY_OF_MONTH, -3);
+        payment2.put("paymentDate", sdf.format(cal.getTime()));
+        payment2.put("amount", new BigDecimal("15000"));
+        payment2.put("method", "Check");
+        payment2.put("reference", "CHK-789456");
+        payment2.put("status", "PENDING");
+        payment2.put("notes", "Supplemental payment");
+        paymentHistory.add(payment2);
+        
+        // Historical payment 3
+        Map<String, Object> payment3 = new HashMap<>();
+        payment3.put("paymentId", "PAY-2025-003");
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+        payment3.put("paymentDate", sdf.format(cal.getTime()));
+        payment3.put("amount", new BigDecimal("5000"));
+        payment3.put("method", "Electronic Transfer");
+        payment3.put("reference", "EFT-456789");
+        payment3.put("status", "CONFIRMED");
+        payment3.put("notes", "Partial payment");
+        paymentHistory.add(payment3);
+        
+        // Statistical data
         BigDecimal totalConfirmed = BigDecimal.ZERO;
         BigDecimal totalPending = BigDecimal.ZERO;
         int confirmedCount = 0, pendingCount = 0;
         
-        List<Map<String, Object>> paymentHistory = new ArrayList<>();
-        
-        try {
-            // Database connection
-            Class.forName("org.postgresql.Driver");
-            conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
-            
-            // Get customer information
-            String customerSql = "SELECT c.customer_code, c.company_name, c.status, " +
-                               "cc.credit_limit, cc.available_credit " +
-                               "FROM customers c " +
-                               "LEFT JOIN customer_credit cc ON c.customer_id = cc.customer_id " +
-                               "WHERE c.customer_code = ?";
-            
-            stmt = conn.prepareStatement(customerSql);
-            stmt.setString(1, customerCode);
-            rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                companyName = rs.getString("company_name");
-                accountStatus = rs.getString("status");
-                creditLimit = rs.getBigDecimal("credit_limit");
-                availableCredit = rs.getBigDecimal("available_credit");
-                
-                if (creditLimit != null && availableCredit != null) {
-                    currentBalance = creditLimit.subtract(availableCredit);
-                }
-            } else {
-                errorMessage = "Customer not found: " + customerCode;
+        for (Map<String, Object> payment : paymentHistory) {
+            BigDecimal amount = (BigDecimal)payment.get("amount");
+            String status = (String)payment.get("status");
+            if ("CONFIRMED".equals(status)) {
+                totalConfirmed = totalConfirmed.add(amount);
+                confirmedCount++;
+            } else if ("PENDING".equals(status)) {
+                totalPending = totalPending.add(amount);
+                pendingCount++;
             }
-            rs.close();
-            stmt.close();
-            
-            // Process payment recording
-            if ("record".equals(action) && paymentAmount != null && !paymentAmount.trim().isEmpty() && errorMessage == null) {
-                try {
-                    BigDecimal amount = new BigDecimal(paymentAmount);
-                    if (amount.compareTo(BigDecimal.ZERO) > 0) {
-                        // Insert payment record into database
-                        String insertPaymentSql = "INSERT INTO payments (customer_code, payment_amount, payment_method, " +
-                                                "payment_reference, notes, payment_date, status) " +
-                                                "VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'PENDING')";
-                        
-                        stmt = conn.prepareStatement(insertPaymentSql, Statement.RETURN_GENERATED_KEYS);
-                        stmt.setString(1, customerCode);
-                        stmt.setBigDecimal(2, amount);
-                        stmt.setString(3, paymentMethod);
-                        stmt.setString(4, paymentReference);
-                        stmt.setString(5, notes);
-                        
-                        int rowsInserted = stmt.executeUpdate();
-                        
-                        if (rowsInserted > 0) {
-                            ResultSet generatedKeys = stmt.getGeneratedKeys();
-                            String paymentId = "";
-                            if (generatedKeys.next()) {
-                                paymentId = "PAY-" + generatedKeys.getLong(1);
-                            }
-                            generatedKeys.close();
-                            
-                            paymentRecorded = true;
-                            resultMessage = "Payment record created successfully. Payment ID: " + paymentId + 
-                                          ", Amount: $" + String.format("%,.2f", amount) + ", Status: Pending Confirmation";
-                        } else {
-                            resultMessage = "Failed to record payment in database";
-                            messageType = "error";
-                        }
-                        stmt.close();
-                    } else {
-                        resultMessage = "Payment amount must be greater than 0";
-                        messageType = "error";
-                    }
-                } catch (NumberFormatException e) {
-                    resultMessage = "Payment amount format error";
-                    messageType = "error";
-                } catch (SQLException e) {
-                    resultMessage = "Database error during payment recording: " + e.getMessage();
-                    messageType = "error";
-                }
-            }
-            
-            // Fetch payment history from database
-            if (errorMessage == null) {
-                String paymentHistorySql = "SELECT payment_id, payment_date, payment_amount, payment_method, " +
-                                         "payment_reference, status, notes " +
-                                         "FROM payments WHERE customer_code = ? ORDER BY payment_date DESC LIMIT 20";
-                
-                stmt = conn.prepareStatement(paymentHistorySql);
-                stmt.setString(1, customerCode);
-                rs = stmt.executeQuery();
-                
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-                
-                while (rs.next()) {
-                    Map<String, Object> payment = new HashMap<>();
-                    payment.put("paymentId", "PAY-" + rs.getLong("payment_id"));
-                    payment.put("paymentDate", sdf.format(rs.getTimestamp("payment_date")));
-                    payment.put("amount", rs.getBigDecimal("payment_amount"));
-                    payment.put("method", rs.getString("payment_method"));
-                    payment.put("reference", rs.getString("payment_reference"));
-                    payment.put("status", rs.getString("status"));
-                    payment.put("notes", rs.getString("notes"));
-                    
-                    paymentHistory.add(payment);
-                    
-                    // Calculate statistics
-                    BigDecimal amount = rs.getBigDecimal("payment_amount");
-                    String status = rs.getString("status");
-                    if ("CONFIRMED".equals(status)) {
-                        totalConfirmed = totalConfirmed.add(amount);
-                        confirmedCount++;
-                    } else if ("PENDING".equals(status)) {
-                        totalPending = totalPending.add(amount);
-                        pendingCount++;
-                    }
-                }
-                rs.close();
-                stmt.close();
-            }
-            
-        } catch (Exception e) {
-            errorMessage = "Database connection error: " + e.getMessage();
-            e.printStackTrace();
-        } finally {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
-            if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
-            if (conn != null) try { conn.close(); } catch (SQLException e) {}
         }
         %>
-        
-        <% if (errorMessage != null) { %>
-        <div class="error-message">
-            <strong>Error:</strong> <%= errorMessage %>
-        </div>
-        <% } else { %>
         
         <!-- Page title -->
         <div class="payment-header">
@@ -234,7 +168,7 @@
                     <div class="summary-label">Credit Limit</div>
                 </div>
                 <div class="summary-card">
-                    <div class="summary-value" style="color: #28a745;">$<%= String.format("%,.2f", availableCredit) %></div>
+                    <div class="summary-value" style="color: #28a745;">$<%= String.format("%,.2f", creditLimit.subtract(currentBalance)) %></div>
                     <div class="summary-label">Available Credit</div>
                 </div>
                 <div class="summary-card">
@@ -314,9 +248,6 @@
         <!-- Payment history -->
         <div class="payment-history">
             <h3>Payment History</h3>
-            <% if (paymentHistory.isEmpty()) { %>
-                <p>No payment records found for this customer.</p>
-            <% } else { %>
             <table class="payment-table">
                 <thead>
                     <tr>
@@ -340,7 +271,7 @@
                         <td><%= payment.get("paymentDate") %></td>
                         <td class="amount-large">$<%= String.format("%,.2f", amount) %></td>
                         <td><%= payment.get("method") %></td>
-                        <td><%= payment.get("reference") != null ? payment.get("reference") : "" %></td>
+                        <td><%= payment.get("reference") %></td>
                         <td class="status-<%= status.toLowerCase() %>">
                             <% if ("CONFIRMED".equals(status)) { %>
                                 Confirmed
@@ -350,7 +281,7 @@
                                 Failed
                             <% } %>
                         </td>
-                        <td><%= payment.get("notes") != null ? payment.get("notes") : "" %></td>
+                        <td><%= payment.get("notes") %></td>
                         <td>
                             <% if ("PENDING".equals(status)) { %>
                                 <button class="btn btn-primary" style="padding: 3px 8px; font-size: 12px;" onclick="confirmPayment('<%= payment.get("paymentId") %>')">Confirm</button>
@@ -363,7 +294,6 @@
                     <% } %>
                 </tbody>
             </table>
-            <% } %>
         </div>
         
         <!-- Quick action buttons -->
@@ -373,7 +303,6 @@
             <a href="../customer-search-working.jsp" class="btn btn-secondary">Back to Search</a>
         </div>
         
-        <% } %>
     </div>
     
     <div id="footer">
@@ -383,15 +312,17 @@
     <script>
         function confirmPayment(paymentId) {
             if (confirm('Are you sure you want to confirm payment ' + paymentId + '?')) {
-                // In a real system, this would send an AJAX request to update the database
-                alert('Payment ' + paymentId + ' confirmation functionality requires additional implementation');
+                alert('Payment ' + paymentId + ' has been confirmed');
+                // In actual system, this would send AJAX request to server
+                location.reload();
             }
         }
         
         function rejectPayment(paymentId) {
             if (confirm('Are you sure you want to reject payment ' + paymentId + '?')) {
-                // In a real system, this would send an AJAX request to update the database
-                alert('Payment ' + paymentId + ' rejection functionality requires additional implementation');
+                alert('Payment ' + paymentId + ' has been rejected');
+                // In actual system, this would send AJAX request to server
+                location.reload();
             }
         }
     </script>

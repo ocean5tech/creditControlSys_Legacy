@@ -1,28 +1,29 @@
 package com.creditcontrol.service;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import com.creditcontrol.util.LoggerUtil;
 
 /**
- * Simple Credit Limit Validation Logic - POC Implementation
- * 简单的信用限额验证逻辑 - POC实现
+ * Credit Limit Validation Logic - Database-driven Business Rules
+ * 信用限额验证逻辑 - 数据库驱动的业务规则
  */
 public class CreditLimitValidator {
     
-    // 简单的信用评级到限额映射 (POC数据)
-    private static final Map<String, BigDecimal> CREDIT_RATING_LIMITS = new HashMap<>();
+    private static final String DB_URL = "jdbc:postgresql://172.31.19.10:5432/creditcontrol";
+    private static final String DB_USER = "creditapp";
+    private static final String DB_PASSWORD = "secure123";
     
-    static {
-        CREDIT_RATING_LIMITS.put("AAA", new BigDecimal("1000000")); // 100万
-        CREDIT_RATING_LIMITS.put("AA", new BigDecimal("500000"));   // 50万
-        CREDIT_RATING_LIMITS.put("A", new BigDecimal("200000"));    // 20万
-        CREDIT_RATING_LIMITS.put("BBB", new BigDecimal("100000"));  // 10万
-        CREDIT_RATING_LIMITS.put("BB", new BigDecimal("50000"));    // 5万
-        CREDIT_RATING_LIMITS.put("B", new BigDecimal("20000"));     // 2万
-        CREDIT_RATING_LIMITS.put("C", new BigDecimal("10000"));     // 1万
-    }
+    // Cache for credit rating limits to avoid frequent DB calls
+    private static Map<String, BigDecimal> creditRatingLimitsCache = new HashMap<>();
+    private static long lastCacheUpdate = 0;
+    private static final long CACHE_TTL = 300000; // 5 minutes TTL
     
     /**
      * 验证信用限额是否合规
@@ -51,8 +52,8 @@ public class CreditLimitValidator {
             return result;
         }
         
-        // 2. 评级验证
-        BigDecimal maxAllowedLimit = CREDIT_RATING_LIMITS.get(customerRating.toUpperCase());
+        // 2. 评级验证 - 从数据库获取
+        BigDecimal maxAllowedLimit = getCreditRatingLimit(customerRating.toUpperCase());
         if (maxAllowedLimit == null) {
             result.setValid(false);
             result.setErrorMessage("无效的信用评级: " + customerRating);
@@ -81,10 +82,106 @@ public class CreditLimitValidator {
     }
     
     /**
-     * 根据评级获取建议的信用限额
+     * 根据评级获取建议的信用限额 - 从数据库获取
      */
     public static BigDecimal getSuggestedCreditLimit(String customerRating) {
-        return CREDIT_RATING_LIMITS.get(customerRating.toUpperCase());
+        return getCreditRatingLimit(customerRating.toUpperCase());
+    }
+    
+    /**
+     * 从数据库获取信用评级对应的最大限额
+     */
+    private static BigDecimal getCreditRatingLimit(String creditRating) {
+        // Check cache first
+        if (isCacheValid() && creditRatingLimitsCache.containsKey(creditRating)) {
+            return creditRatingLimitsCache.get(creditRating);
+        }
+        
+        // Reload cache from database
+        loadCreditRatingLimitsFromDatabase();
+        
+        return creditRatingLimitsCache.get(creditRating);
+    }
+    
+    /**
+     * 检查缓存是否有效
+     */
+    private static boolean isCacheValid() {
+        return (System.currentTimeMillis() - lastCacheUpdate) < CACHE_TTL;
+    }
+    
+    /**
+     * 从数据库加载信用评级限额
+     */
+    private static synchronized void loadCreditRatingLimitsFromDatabase() {
+        // Double-check pattern for thread safety
+        if (isCacheValid()) {
+            return;
+        }
+        
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            Class.forName("org.postgresql.Driver");
+            conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            
+            String sql = "SELECT credit_rating, max_credit_limit FROM credit_rating_limits " +
+                        "WHERE (effective_date IS NULL OR effective_date <= CURRENT_DATE) " +
+                        "AND (expiry_date IS NULL OR expiry_date > CURRENT_DATE) " +
+                        "ORDER BY credit_rating";
+            
+            stmt = conn.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            
+            Map<String, BigDecimal> newCache = new HashMap<>();
+            while (rs.next()) {
+                String rating = rs.getString("credit_rating");
+                BigDecimal limit = rs.getBigDecimal("max_credit_limit");
+                newCache.put(rating, limit);
+            }
+            
+            // Update cache atomically
+            creditRatingLimitsCache = newCache;
+            lastCacheUpdate = System.currentTimeMillis();
+            
+            LoggerUtil.logBusiness("CreditLimitValidator", 
+                "Loaded " + newCache.size() + " credit rating limits from database");
+                
+        } catch (Exception e) {
+            LoggerUtil.logBusinessError("CreditLimitValidator", 
+                "Failed to load credit rating limits from database", e);
+            
+            // If database fails, use emergency fallback
+            if (creditRatingLimitsCache.isEmpty()) {
+                loadEmergencyFallbackRules();
+            }
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+            if (conn != null) try { conn.close(); } catch (SQLException e) {}
+        }
+    }
+    
+    /**
+     * 紧急情况下的后备规则
+     */
+    private static void loadEmergencyFallbackRules() {
+        Map<String, BigDecimal> fallback = new HashMap<>();
+        fallback.put("AAA", new BigDecimal("1000000"));
+        fallback.put("AA", new BigDecimal("500000"));
+        fallback.put("A", new BigDecimal("200000"));
+        fallback.put("BBB", new BigDecimal("100000"));
+        fallback.put("BB", new BigDecimal("50000"));
+        fallback.put("B", new BigDecimal("20000"));
+        fallback.put("C", new BigDecimal("10000"));
+        
+        creditRatingLimitsCache = fallback;
+        lastCacheUpdate = System.currentTimeMillis();
+        
+        LoggerUtil.logBusinessError("CreditLimitValidator", 
+            "Using emergency fallback credit rating limits", null);
     }
     
     /**

@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.math.BigDecimal" %>
+<%@ page import="java.sql.*" %>
+<%@ page import="java.util.*" %>
 <%@ page import="com.creditcontrol.service.CreditLimitValidator" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -80,38 +82,132 @@
         String action = request.getParameter("action");
         String newLimitStr = request.getParameter("newCreditLimit");
         String reason = request.getParameter("reason");
+        String comments = request.getParameter("comments");
+        String newCreditRating = request.getParameter("creditRating"); // New credit rating from form
         
-        // Mock customer data - POC Implementation
-        String companyName = "ABC Manufacturing Ltd";
-        String creditRating = "A";
-        BigDecimal currentLimit = new BigDecimal("200000");
-        BigDecimal outstandingBalance = new BigDecimal("45000");
-        String status = "ACTIVE";
+        // Real database connection and operations
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
         
-        // Process form submission - Simplified POC version
+        String companyName = "";
+        String creditRating = "";
+        BigDecimal currentLimit = BigDecimal.ZERO;
+        BigDecimal outstandingBalance = BigDecimal.ZERO;
+        BigDecimal availableCredit = BigDecimal.ZERO;
+        String status = "";
+        String errorMessage = null;
+        
         boolean formSubmitted = "modify".equals(action) && newLimitStr != null;
         String validationMessage = null;
         boolean validationPassed = true;
+        boolean dataUpdated = false;
         
-        if (formSubmitted) {
-            try {
-                BigDecimal newLimit = new BigDecimal(newLimitStr);
+        try {
+            // Database connection
+            Class.forName("org.postgresql.Driver");
+            conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
+            
+            // Fetch current customer data
+            String selectSql = "SELECT c.customer_code, c.company_name, c.status, " +
+                              "cc.credit_limit, cc.available_credit, cc.credit_rating " +
+                              "FROM customers c " +
+                              "LEFT JOIN customer_credit cc ON c.customer_id = cc.customer_id " +
+                              "WHERE c.customer_code = ?";
+            
+            stmt = conn.prepareStatement(selectSql);
+            stmt.setString(1, customerCode);
+            rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                companyName = rs.getString("company_name");
+                status = rs.getString("status");
+                creditRating = rs.getString("credit_rating");
+                currentLimit = rs.getBigDecimal("credit_limit");
+                availableCredit = rs.getBigDecimal("available_credit");
                 
-                // Simple validation logic
-                if (newLimit.compareTo(BigDecimal.ZERO) <= 0) {
-                    validationMessage = "Credit limit must be greater than 0";
-                    validationPassed = false;
-                } else if (newLimit.compareTo(new BigDecimal("1000000")) > 0) {
-                    validationMessage = "Credit limit cannot exceed 1,000,000";
-                    validationPassed = false;
-                } else {
-                    validationMessage = "Credit limit modification validation passed";
+                // Calculate outstanding balance
+                if (currentLimit != null && availableCredit != null) {
+                    outstandingBalance = currentLimit.subtract(availableCredit);
                 }
-                
-            } catch (Exception e) {
-                validationMessage = "Input format error";
-                validationPassed = false;
+            } else {
+                errorMessage = "Customer not found: " + customerCode;
             }
+            
+            // Process form submission with database update
+            if (formSubmitted && errorMessage == null) {
+                try {
+                    BigDecimal newLimit = new BigDecimal(newLimitStr);
+                    
+                    // Validation using CreditLimitValidator with form-submitted rating
+                    String ratingToValidate = (newCreditRating != null && !newCreditRating.trim().isEmpty()) ? newCreditRating : creditRating;
+                    CreditLimitValidator.ValidationResult validation = 
+                        CreditLimitValidator.validateCreditLimit(ratingToValidate, newLimit);
+                    
+                    if (validation.isValid()) {
+                        // Update database - both credit limit and rating if changed
+                        String updateSql = "UPDATE customer_credit SET credit_limit = ?, " +
+                                         "available_credit = available_credit + (? - credit_limit), " +
+                                         "credit_rating = ? " +
+                                         "WHERE customer_id = (SELECT customer_id FROM customers WHERE customer_code = ?)";
+                        
+                        PreparedStatement updateStmt = conn.prepareStatement(updateSql);
+                        updateStmt.setBigDecimal(1, newLimit);
+                        updateStmt.setBigDecimal(2, newLimit);
+                        updateStmt.setString(3, ratingToValidate);
+                        updateStmt.setString(4, customerCode);
+                        
+                        int rowsUpdated = updateStmt.executeUpdate();
+                        updateStmt.close();
+                        
+                        if (rowsUpdated > 0) {
+                            // Insert modification record
+                            String insertLogSql = "INSERT INTO credit_limit_modifications " +
+                                                "(customer_code, old_limit, new_limit, reason, comments, modification_date, status) " +
+                                                "VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'APPROVED')";
+                            
+                            PreparedStatement logStmt = conn.prepareStatement(insertLogSql);
+                            logStmt.setString(1, customerCode);
+                            logStmt.setBigDecimal(2, currentLimit);
+                            logStmt.setBigDecimal(3, newLimit);
+                            logStmt.setString(4, reason);
+                            logStmt.setString(5, comments);
+                            logStmt.executeUpdate();
+                            logStmt.close();
+                            
+                            validationMessage = "Credit limit successfully updated from $" + 
+                                              String.format("%,.2f", currentLimit) + " to $" + 
+                                              String.format("%,.2f", newLimit);
+                            dataUpdated = true;
+                            
+                            // Refresh current data
+                            currentLimit = newLimit;
+                            availableCredit = availableCredit.add(newLimit.subtract(currentLimit));
+                        } else {
+                            validationMessage = "Failed to update credit limit in database";
+                            validationPassed = false;
+                        }
+                    } else {
+                        validationMessage = validation.getErrorMessage();
+                        validationPassed = false;
+                    }
+                    
+                } catch (NumberFormatException e) {
+                    validationMessage = "Invalid credit limit format";
+                    validationPassed = false;
+                } catch (SQLException e) {
+                    validationMessage = "Database error during update: " + e.getMessage();
+                    validationPassed = false;
+                }
+            }
+            
+        } catch (Exception e) {
+            errorMessage = "Database connection error: " + e.getMessage();
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+            if (conn != null) try { conn.close(); } catch (SQLException e) {}
         }
         %>
         

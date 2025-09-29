@@ -1,7 +1,14 @@
 package com.creditcontrol.service;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Simple Risk Assessment Engine - POC Implementation
@@ -9,11 +16,15 @@ import java.util.Date;
  */
 public class RiskAssessmentEngine {
     
-    // 风险评分权重 (简单POC算法)
-    private static final double CREDIT_RATING_WEIGHT = 0.4;    // 信用评级权重40%
-    private static final double PAYMENT_HISTORY_WEIGHT = 0.3;  // 付款历史权重30%
-    private static final double OUTSTANDING_BALANCE_WEIGHT = 0.2; // 未偿余额权重20%
-    private static final double INDUSTRY_RISK_WEIGHT = 0.1;    // 行业风险权重10%
+    // Database connection details
+    private static final String DB_URL = "jdbc:postgresql://172.31.19.10:5432/creditcontrol";
+    private static final String DB_USER = "creditapp";
+    private static final String DB_PASSWORD = "secure123";
+    
+    // Cache for risk assessment weights
+    private static Map<String, Double> riskWeightsCache = new HashMap<>();
+    private static long lastRiskWeightsCacheUpdate = 0;
+    private static final long CACHE_TTL = 300000; // 5 minutes TTL
     
     /**
      * 计算客户风险评分 (0-100分，分数越高风险越低)
@@ -37,11 +48,16 @@ public class RiskAssessmentEngine {
         // 4. 行业风险评分 (10%)
         double industryScore = getIndustryRiskScore(customerData.getIndustry());
         
-        // 5. 综合评分计算
-        double totalScore = (creditRatingScore * CREDIT_RATING_WEIGHT) +
-                          (paymentHistoryScore * PAYMENT_HISTORY_WEIGHT) +
-                          (balanceScore * OUTSTANDING_BALANCE_WEIGHT) +
-                          (industryScore * INDUSTRY_RISK_WEIGHT);
+        // 5. 综合评分计算 - 使用数据库中的权重
+        double creditRatingWeight = getRiskWeight("CREDIT_RATING");
+        double paymentHistoryWeight = getRiskWeight("PAYMENT_HISTORY");
+        double outstandingBalanceWeight = getRiskWeight("OUTSTANDING_BALANCE");
+        double industryRiskWeight = getRiskWeight("INDUSTRY_RISK");
+        
+        double totalScore = (creditRatingScore * creditRatingWeight) +
+                          (paymentHistoryScore * paymentHistoryWeight) +
+                          (balanceScore * outstandingBalanceWeight) +
+                          (industryScore * industryRiskWeight);
         
         // 6. 设置结果
         result.setRiskScore((int) Math.round(totalScore));
@@ -244,5 +260,101 @@ public class RiskAssessmentEngine {
         
         public Date getAssessmentDate() { return assessmentDate; }
         public void setAssessmentDate(Date assessmentDate) { this.assessmentDate = assessmentDate; }
+    }
+    
+    /**
+     * 从数据库获取风险权重
+     */
+    private static double getRiskWeight(String factorName) {
+        // Check cache first
+        if (isRiskWeightsCacheValid() && riskWeightsCache.containsKey(factorName)) {
+            return riskWeightsCache.get(factorName);
+        }
+        
+        // Reload cache from database
+        loadRiskWeightsFromDatabase();
+        
+        // Return cached value or default fallback
+        Double weight = riskWeightsCache.get(factorName);
+        if (weight != null) {
+            return weight;
+        }
+        
+        // Emergency fallback weights
+        switch (factorName) {
+            case "CREDIT_RATING": return 0.4;
+            case "PAYMENT_HISTORY": return 0.3;
+            case "OUTSTANDING_BALANCE": return 0.2;
+            case "INDUSTRY_RISK": return 0.1;
+            default: return 0.0;
+        }
+    }
+    
+    /**
+     * 检查风险权重缓存是否有效
+     */
+    private static boolean isRiskWeightsCacheValid() {
+        return (System.currentTimeMillis() - lastRiskWeightsCacheUpdate) < CACHE_TTL;
+    }
+    
+    /**
+     * 从数据库加载风险权重
+     */
+    private static synchronized void loadRiskWeightsFromDatabase() {
+        // Double-check pattern for thread safety
+        if (isRiskWeightsCacheValid()) {
+            return;
+        }
+        
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            Class.forName("org.postgresql.Driver");
+            conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            
+            String sql = "SELECT factor_name, weight_value FROM risk_assessment_weights " +
+                        "WHERE effective_date <= CURRENT_DATE " +
+                        "ORDER BY factor_name";
+            
+            stmt = conn.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            
+            Map<String, Double> newCache = new HashMap<>();
+            while (rs.next()) {
+                String factorName = rs.getString("factor_name");
+                Double weightValue = rs.getDouble("weight_value");
+                newCache.put(factorName, weightValue);
+            }
+            
+            // Update cache atomically
+            riskWeightsCache = newCache;
+            lastRiskWeightsCacheUpdate = System.currentTimeMillis();
+                
+        } catch (Exception e) {
+            // If database fails, use emergency fallback
+            if (riskWeightsCache.isEmpty()) {
+                loadEmergencyRiskWeights();
+            }
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+            if (conn != null) try { conn.close(); } catch (SQLException e) {}
+        }
+    }
+    
+    /**
+     * 紧急情况下的风险权重后备
+     */
+    private static void loadEmergencyRiskWeights() {
+        Map<String, Double> fallback = new HashMap<>();
+        fallback.put("CREDIT_RATING", 0.4);
+        fallback.put("PAYMENT_HISTORY", 0.3);
+        fallback.put("OUTSTANDING_BALANCE", 0.2);
+        fallback.put("INDUSTRY_RISK", 0.1);
+        
+        riskWeightsCache = fallback;
+        lastRiskWeightsCacheUpdate = System.currentTimeMillis();
     }
 }

@@ -1,9 +1,16 @@
 package com.creditcontrol.service;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Simple Business Rules Engine - POC Implementation
@@ -107,9 +114,9 @@ public class BusinessRuleEngine {
         }
         
         if ("HIGH".equals(riskLevel)) {
-            BigDecimal highRiskMaxLimit = new BigDecimal("50000"); // 高风险客户最大5万限额
-            if (requestedLimit.compareTo(highRiskMaxLimit) > 0) {
-                violations.add("高风险客户信用限额不能超过50,000");
+            BigDecimal highRiskMaxLimit = getBusinessRuleValue("HIGH_RISK_MAX_LIMIT");
+            if (highRiskMaxLimit != null && requestedLimit.compareTo(highRiskMaxLimit) > 0) {
+                violations.add("高风险客户信用限额不能超过 " + String.format("%,.0f", highRiskMaxLimit));
                 return false;
             }
             warnings.add("高风险客户，建议要求担保");
@@ -303,5 +310,101 @@ public class BusinessRuleEngine {
         
         public Date getExecutionDate() { return executionDate; }
         public void setExecutionDate(Date executionDate) { this.executionDate = executionDate; }
+    }
+    
+    // Database connection details
+    private static final String DB_URL = "jdbc:postgresql://172.31.19.10:5432/creditcontrol";
+    private static final String DB_USER = "creditapp";
+    private static final String DB_PASSWORD = "secure123";
+    
+    // Cache for business rules
+    private static Map<String, BigDecimal> businessRulesCache = new HashMap<>();
+    private static long lastBusinessRulesCacheUpdate = 0;
+    private static final long CACHE_TTL = 300000; // 5 minutes TTL
+    
+    /**
+     * 从数据库获取业务规则值
+     */
+    private static BigDecimal getBusinessRuleValue(String ruleName) {
+        // Check cache first
+        if (isBusinessRulesCacheValid() && businessRulesCache.containsKey(ruleName)) {
+            return businessRulesCache.get(ruleName);
+        }
+        
+        // Reload cache from database
+        loadBusinessRulesFromDatabase();
+        
+        return businessRulesCache.get(ruleName);
+    }
+    
+    /**
+     * 检查业务规则缓存是否有效
+     */
+    private static boolean isBusinessRulesCacheValid() {
+        return (System.currentTimeMillis() - lastBusinessRulesCacheUpdate) < CACHE_TTL;
+    }
+    
+    /**
+     * 从数据库加载业务规则
+     */
+    private static synchronized void loadBusinessRulesFromDatabase() {
+        // Double-check pattern for thread safety
+        if (isBusinessRulesCacheValid()) {
+            return;
+        }
+        
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        
+        try {
+            Class.forName("org.postgresql.Driver");
+            conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            
+            String sql = "SELECT rule_name, rule_value FROM business_rules " +
+                        "WHERE is_active = TRUE " +
+                        "AND (effective_date IS NULL OR effective_date <= CURRENT_DATE) " +
+                        "AND (expiry_date IS NULL OR expiry_date > CURRENT_DATE) " +
+                        "AND rule_value IS NOT NULL " +
+                        "ORDER BY priority DESC";
+            
+            stmt = conn.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            
+            Map<String, BigDecimal> newCache = new HashMap<>();
+            while (rs.next()) {
+                String ruleName = rs.getString("rule_name");
+                BigDecimal ruleValue = rs.getBigDecimal("rule_value");
+                newCache.put(ruleName, ruleValue);
+            }
+            
+            // Update cache atomically
+            businessRulesCache = newCache;
+            lastBusinessRulesCacheUpdate = System.currentTimeMillis();
+                
+        } catch (Exception e) {
+            // If database fails, use emergency fallback
+            if (businessRulesCache.isEmpty()) {
+                loadEmergencyBusinessRules();
+            }
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+            if (conn != null) try { conn.close(); } catch (SQLException e) {}
+        }
+    }
+    
+    /**
+     * 紧急情况下的业务规则后备
+     */
+    private static void loadEmergencyBusinessRules() {
+        Map<String, BigDecimal> fallback = new HashMap<>();
+        fallback.put("HIGH_RISK_MAX_LIMIT", new BigDecimal("50000"));
+        fallback.put("MAX_CREDIT_LIMIT_GLOBAL", new BigDecimal("10000000"));
+        fallback.put("HIGH_VALUE_CUSTOMER_THRESHOLD", new BigDecimal("100000"));
+        fallback.put("MIN_CREDIT_LIMIT", new BigDecimal("1000"));
+        
+        businessRulesCache = fallback;
+        lastBusinessRulesCacheUpdate = System.currentTimeMillis();
     }
 }

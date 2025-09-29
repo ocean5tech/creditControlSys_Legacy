@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.math.BigDecimal, java.util.*" %>
+<%@ page import="java.math.BigDecimal, java.sql.*, java.util.*" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -30,7 +30,10 @@
         .btn-success { background: #28a745; color: white; }
         .btn-warning { background: #ffc107; color: #000; }
         .btn-secondary { background: #6c757d; color: white; }
-        .recommendation { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 15px 0; border-radius: 3px; }
+        .customers-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .customers-table th, .customers-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        .customers-table th { background: #f8f9fa; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; margin: 15px 0; border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -41,89 +44,112 @@
     
     <div id="main-content">
         <%
-        // Get customer parameters
         String customerCode = request.getParameter("customerCode");
         if (customerCode == null || customerCode.isEmpty()) {
             customerCode = "CUST001";
         }
         
-        // Mock multiple customer risk assessment data - POC Implementation
+        // Real database connection and operations
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
         List<Map<String, Object>> customerRiskData = new ArrayList<>();
+        String errorMessage = null;
         
-        // Customer 1 data
-        Map<String, Object> cust1 = new HashMap<>();
-        cust1.put("customerCode", "CUST001");
-        cust1.put("companyName", "ABC Manufacturing Ltd");
-        cust1.put("creditRating", "A");
-        cust1.put("industry", "Manufacturing");
-        cust1.put("creditLimit", new BigDecimal("200000"));
-        cust1.put("outstandingBalance", new BigDecimal("45000"));
-        cust1.put("riskScore", 35);
-        cust1.put("riskLevel", "LOW");
-        customerRiskData.add(cust1);
-        
-        // Customer 2 data
-        Map<String, Object> cust2 = new HashMap<>();
-        cust2.put("customerCode", "CUST002");
-        cust2.put("companyName", "XYZ Trading Corp");
-        cust2.put("creditRating", "BBB");
-        cust2.put("industry", "Trading");
-        cust2.put("creditLimit", new BigDecimal("100000"));
-        cust2.put("outstandingBalance", new BigDecimal("75000"));
-        cust2.put("riskScore", 72);
-        cust2.put("riskLevel", "HIGH");
-        customerRiskData.add(cust2);
-        
-        // Customer 3 data
-        Map<String, Object> cust3 = new HashMap<>();
-        cust3.put("customerCode", "CUST003");
-        cust3.put("companyName", "Global Logistics Inc");
-        cust3.put("creditRating", "AA");
-        cust3.put("industry", "Logistics");
-        cust3.put("creditLimit", new BigDecimal("500000"));
-        cust3.put("outstandingBalance", new BigDecimal("125000"));
-        cust3.put("riskScore", 25);
-        cust3.put("riskLevel", "LOW");
-        customerRiskData.add(cust3);
-        
-        // Simplified risk statistics - POC implementation
-        List<Map<String, Object>> riskAssessments = customerRiskData;
         int totalLowRisk = 0, totalMediumRisk = 0, totalHighRisk = 0, totalVeryHighRisk = 0;
         
-        for (Map<String, Object> custData : customerRiskData) {
-            // Count risk level distribution
-            String riskLevel = (String)custData.get("riskLevel");
-            if ("LOW".equals(riskLevel)) totalLowRisk++;
-            else if ("MEDIUM".equals(riskLevel)) totalMediumRisk++;
-            else if ("HIGH".equals(riskLevel)) totalHighRisk++;
-            else if ("VERY_HIGH".equals(riskLevel)) totalVeryHighRisk++;
+        try {
+            // Database connection
+            Class.forName("org.postgresql.Driver");
+            conn = DriverManager.getConnection("jdbc:postgresql://172.31.19.10:5432/creditcontrol", "creditapp", "secure123");
+            
+            // Query all customers with their risk assessments
+            String sql = "SELECT c.customer_code, c.company_name, c.industry, " +
+                        "cc.credit_limit, cc.available_credit, cc.credit_rating, cc.risk_score " +
+                        "FROM customers c " +
+                        "LEFT JOIN customer_credit cc ON c.customer_id = cc.customer_id " +
+                        "ORDER BY c.customer_code";
+            
+            stmt = conn.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Map<String, Object> custData = new HashMap<>();
+                custData.put("customerCode", rs.getString("customer_code"));
+                custData.put("companyName", rs.getString("company_name"));
+                custData.put("creditRating", rs.getString("credit_rating"));
+                custData.put("industry", rs.getString("industry"));
+                custData.put("creditLimit", rs.getBigDecimal("credit_limit"));
+                custData.put("availableCredit", rs.getBigDecimal("available_credit"));
+                
+                // Calculate outstanding balance
+                BigDecimal creditLimit = rs.getBigDecimal("credit_limit");
+                BigDecimal availableCredit = rs.getBigDecimal("available_credit");
+                BigDecimal outstandingBalance = BigDecimal.ZERO;
+                if (creditLimit != null && availableCredit != null) {
+                    outstandingBalance = creditLimit.subtract(availableCredit);
+                }
+                custData.put("outstandingBalance", outstandingBalance);
+                
+                int riskScore = rs.getInt("risk_score");
+                custData.put("riskScore", riskScore);
+                
+                // Determine risk level based on score
+                String riskLevel;
+                if (riskScore <= 30) {
+                    riskLevel = "LOW";
+                    totalLowRisk++;
+                } else if (riskScore <= 50) {
+                    riskLevel = "MEDIUM";
+                    totalMediumRisk++;
+                } else if (riskScore <= 70) {
+                    riskLevel = "HIGH";
+                    totalHighRisk++;
+                } else {
+                    riskLevel = "VERY_HIGH";
+                    totalVeryHighRisk++;
+                }
+                custData.put("riskLevel", riskLevel);
+                
+                customerRiskData.add(custData);
+            }
+            
+        } catch (Exception e) {
+            errorMessage = "Database error: " + e.getMessage();
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) {}
+            if (conn != null) try { conn.close(); } catch (SQLException e) {}
         }
         
         // Find current selected customer's assessment results
         Map<String, Object> currentAssessment = null;
-        for (Map<String, Object> assessment : riskAssessments) {
+        for (Map<String, Object> assessment : customerRiskData) {
             if (customerCode.equals(assessment.get("customerCode"))) {
                 currentAssessment = assessment;
                 break;
             }
         }
-        
-        if (currentAssessment == null) {
-            currentAssessment = riskAssessments.get(0); // Default to first one
-        }
-        
-        // Current customer's risk information (simplified version)
-        int currentRiskScore = (Integer)currentAssessment.get("riskScore");
-        String currentRiskLevel = (String)currentAssessment.get("riskLevel");
         %>
+        
+        <% if (errorMessage != null) { %>
+            <div class="error">
+                <strong>Error:</strong> <%= errorMessage %>
+            </div>
+        <% } else { %>
         
         <!-- Dashboard Header -->
         <div class="dashboard-header">
             <h2>Risk Assessment Dashboard</h2>
-            <p>Current Analysis Customer: <strong><%= currentAssessment.get("companyName") %> (<%= customerCode %>)</strong></p>
+            <% if (currentAssessment != null) { %>
+                <p><strong>Current Analysis Customer:</strong> <%= currentAssessment.get("companyName") %> (<%= customerCode %>)</p>
+            <% } else { %>
+                <p><strong>Customer:</strong> <%= customerCode %> (Not Found)</p>
+            <% } %>
         </div>
         
-        <!-- Risk Indicators Overview -->
+        <!-- Risk Metrics Overview -->
         <div class="risk-metrics">
             <div class="metric-card">
                 <div class="metric-value risk-low"><%= totalLowRisk %></div>
@@ -143,56 +169,87 @@
             </div>
         </div>
         
-        <!-- Current Customer Risk Details -->
+        <% if (currentAssessment != null) { %>
+        <!-- Current Customer Risk Analysis -->
         <div class="risk-summary">
             <h3>Current Customer Risk Analysis</h3>
-            
             <div class="assessment-details">
-                <h4>Comprehensive Risk Score: 
-                    <span class="risk-<%= currentRiskLevel.toLowerCase().replace("_", "-") %>">
-                        <%= currentRiskScore %>/100 (<%= currentRiskLevel %>)
+                <p><strong>Overall Risk Score:</strong> 
+                    <span class="metric-value risk-<%= ((String)currentAssessment.get("riskLevel")).toLowerCase().replace("_", "-") %>">
+                        <%= currentAssessment.get("riskScore") %>/100 (<%= currentAssessment.get("riskLevel") %>)
                     </span>
-                </h4>
+                </p>
                 
-                <div class="progress-bar" style="margin: 15px 0;">
-                    <div class="progress-fill" style="width: <%= currentRiskScore %>%; background: 
-                        <% if ("LOW".equals(currentRiskLevel)) { %>
-                               #28a745
-                        <% } else if ("MEDIUM".equals(currentRiskLevel)) { %>
-                               #ffc107
-                        <% } else if ("HIGH".equals(currentRiskLevel)) { %>
-                               #fd7e14
-                        <% } else { %>
-                               #dc3545
-                        <% } %>;">
-                    </div>
+                <div class="progress-bar">
+                    <div class="progress-fill risk-<%= ((String)currentAssessment.get("riskLevel")).toLowerCase().replace("_", "-") %>" 
+                         style="width: <%= currentAssessment.get("riskScore") %>%; background-color: 
+                         <% String level = (String)currentAssessment.get("riskLevel");
+                            if ("LOW".equals(level)) out.print("#28a745");
+                            else if ("MEDIUM".equals(level)) out.print("#ffc107");
+                            else if ("HIGH".equals(level)) out.print("#fd7e14");
+                            else out.print("#dc3545");
+                         %>;"></div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <h4>Risk Management Recommendation:</h4>
+                    <% String riskLevel = (String)currentAssessment.get("riskLevel"); %>
+                    <% if ("LOW".equals(riskLevel)) { %>
+                        <p>Customer has excellent credit profile with stable payment patterns. Current credit utilization is well within acceptable limits. Recommended to maintain current credit policies.</p>
+                    <% } else if ("MEDIUM".equals(riskLevel)) { %>
+                        <p>Customer shows moderate risk factors. Regular monitoring is recommended. Consider periodic review of credit terms and payment history.</p>
+                    <% } else if ("HIGH".equals(riskLevel)) { %>
+                        <p>Customer exhibits higher risk characteristics. Enhanced monitoring required. Consider tightening credit terms or requiring additional security.</p>
+                    <% } else { %>
+                        <p>Customer poses very high risk. Immediate review required. Consider credit limit reduction or suspension of credit facilities.</p>
+                    <% } %>
                 </div>
             </div>
-            
-            <!-- Risk Assessment Recommendations -->
-            <div class="recommendation">
-                <h4>Risk Management Recommendations:</h4>
-                <% if ("LOW".equals(currentRiskLevel)) { %>
-                    <p>Customer credit status is good, risk is controllable. Recommend maintaining current credit policy.</p>
-                <% } else if ("HIGH".equals(currentRiskLevel)) { %>
-                    <p>Customer risk is high, recommend strengthening monitoring and considering credit policy adjustments.</p>
-                <% } else { %>
-                    <p>Customer risk is at medium level, recommend regular review of credit status.</p>
-                <% } %>
-                
-                <h4>Detailed Analysis:</h4>
-                <ul>
-                    <li><strong>Credit Status:</strong> Credit Rating <%= currentAssessment.get("creditRating") %></li>
-                    <li><strong>Balance Status:</strong> Current Utilization Rate <%= String.format("%.1f", ((BigDecimal)currentAssessment.get("outstandingBalance")).divide((BigDecimal)currentAssessment.get("creditLimit"), 3, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal("100"))) %>%</li>
-                    <li><strong>Industry Risk:</strong> <%= currentAssessment.get("industry") %> Industry</li>
-                </ul>
-            </div>
         </div>
+        
+        <!-- Detailed Risk Analysis -->
+        <div class="assessment-details">
+            <h3>Detailed Analysis</h3>
+            <table class="details-table">
+                <tr>
+                    <th>Credit Status</th>
+                    <td>Credit Rating <%= currentAssessment.get("creditRating") %></td>
+                </tr>
+                <tr>
+                    <th>Credit Utilization</th>
+                    <td>
+                        <% 
+                        BigDecimal creditLimit = (BigDecimal)currentAssessment.get("creditLimit");
+                        BigDecimal outstandingBalance = (BigDecimal)currentAssessment.get("outstandingBalance");
+                        double utilizationRate = 0;
+                        if (creditLimit != null && creditLimit.compareTo(BigDecimal.ZERO) > 0) {
+                            utilizationRate = outstandingBalance.divide(creditLimit, 4, BigDecimal.ROUND_HALF_UP).doubleValue() * 100;
+                        }
+                        %>
+                        <%= String.format("%.1f", utilizationRate) %>% 
+                        ($<%= String.format("%,.2f", outstandingBalance) %> of $<%= String.format("%,.2f", creditLimit) %>)
+                    </td>
+                </tr>
+                <tr>
+                    <th>Industry Risk</th>
+                    <td><%= currentAssessment.get("industry") %> Industry</td>
+                </tr>
+                <tr>
+                    <th>Credit Limit</th>
+                    <td>$<%= String.format("%,.2f", creditLimit) %></td>
+                </tr>
+                <tr>
+                    <th>Available Credit</th>
+                    <td>$<%= String.format("%,.2f", (BigDecimal)currentAssessment.get("availableCredit")) %></td>
+                </tr>
+            </table>
+        </div>
+        <% } %>
         
         <!-- All Customers Risk Overview -->
         <div class="chart-container">
             <h3>All Customers Risk Overview</h3>
-            <table class="details-table">
+            <table class="customers-table">
                 <thead>
                     <tr>
                         <th>Customer Code</th>
@@ -200,27 +257,24 @@
                         <th>Credit Rating</th>
                         <th>Risk Score</th>
                         <th>Risk Level</th>
-                        <th>Suggested Limit</th>
+                        <th>Credit Limit</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <% for (Map<String, Object> assessment : riskAssessments) { 
-                       String code = (String)assessment.get("customerCode");
-                       boolean isCurrent = code.equals(customerCode);
-                       int assessmentRiskScore = (Integer)assessment.get("riskScore");
-                       String assessmentRiskLevel = (String)assessment.get("riskLevel");
-                    %>
-                    <tr style="<%= isCurrent ? "background: #e3f2fd;" : "" %>">
-                        <td><%= code %></td>
-                        <td><%= assessment.get("companyName") %></td>
-                        <td><%= assessment.get("creditRating") %></td>
-                        <td><span class="risk-<%= assessmentRiskLevel.toLowerCase().replace("_", "-") %>"><%= assessmentRiskScore %>/100</span></td>
-                        <td><span class="risk-<%= assessmentRiskLevel.toLowerCase().replace("_", "-") %>"><%= assessmentRiskLevel %></span></td>
-                        <td>¥200,000</td>
+                    <% for (Map<String, Object> customer : customerRiskData) { %>
+                    <tr>
+                        <td><%= customer.get("customerCode") %></td>
+                        <td><%= customer.get("companyName") %></td>
+                        <td><%= customer.get("creditRating") %></td>
+                        <td><%= customer.get("riskScore") %>/100</td>
+                        <td><span class="risk-<%= ((String)customer.get("riskLevel")).toLowerCase().replace("_", "-") %>">
+                            <%= customer.get("riskLevel") %>
+                        </span></td>
+                        <td>$<%= String.format("%,.2f", (BigDecimal)customer.get("creditLimit")) %></td>
                         <td>
-                            <a href="risk-assessment.jsp?customerCode=<%= code %>" class="btn btn-primary" style="padding: 3px 8px; font-size: 12px;">View</a>
-                            <a href="../customer/credit-limit-modify.jsp?customerCode=<%= code %>" class="btn btn-warning" style="padding: 3px 8px; font-size: 12px;">Adjust</a>
+                            <a href="risk-assessment.jsp?customerCode=<%= customer.get("customerCode") %>" class="btn btn-primary">View</a>
+                            <a href="../customer/credit-limit-modify.jsp?customerCode=<%= customer.get("customerCode") %>" class="btn btn-warning">Adjust</a>
                         </td>
                     </tr>
                     <% } %>
@@ -230,22 +284,25 @@
         
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <a href="../customer/customer-details.jsp?customerCode=<%= customerCode %>" class="btn btn-primary">View Customer Details</a>
-            <a href="../customer/credit-limit-modify.jsp?customerCode=<%= customerCode %>" class="btn btn-warning">Modify Credit Limit</a>
-            <a href="../customer-search-working.jsp" class="btn btn-secondary">Back to Search</a>
+            <a href="../customer-search-working.jsp" class="btn btn-secondary">Customer Search</a>
+            <a href="../customer/customer-details.jsp?customerCode=<%= customerCode %>" class="btn btn-primary">Customer Details</a>
+            <a href="../payment/payment-tracking.jsp?customerCode=<%= customerCode %>" class="btn btn-success">Payment Tracking</a>
         </div>
         
         <!-- System Information -->
         <div class="assessment-details">
-            <p><strong>Risk Assessment Engine:</strong> POC Risk Assessment v1.0</p>
+            <p><strong>Risk Assessment Engine:</strong> Database-Integrated Risk Assessment v2.0</p>
             <p><strong>Assessment Time:</strong> <%= new java.util.Date() %></p>
-            <p><strong>Assessed Customers:</strong> <%= riskAssessments.size() %></p>
+            <p><strong>Assessed Customers:</strong> <%= customerRiskData.size() %></p>
+            <p><strong>Database Status:</strong> Connected to PostgreSQL creditcontrol database</p>
         </div>
         
+        <% } %>
     </div>
     
     <div id="footer">
         <p>&copy; 2025 Insurance Company - Legacy Credit Control System</p>
+        <p>Risk Assessment Dashboard - Real Database Integration (PostgreSQL)</p>
     </div>
 </body>
 </html>

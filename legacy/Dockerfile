@@ -31,8 +31,17 @@ RUN cd /app/lib && \
 # Copy application files
 COPY src/main/webapp/ $CATALINA_HOME/webapps/ROOT/
 
-# Create WEB-INF structure (simplified for POC)
+# Create WEB-INF structure and compile Java sources
 RUN mkdir -p $CATALINA_HOME/webapps/ROOT/WEB-INF/classes
+
+# Copy and compile Java sources
+COPY src/main/java/ /tmp/java-src/
+RUN cd /tmp/java-src && \
+    find . -name "*.java" > sources.txt && \
+    javac -cp "$CATALINA_HOME/lib/*:$CATALINA_HOME/webapps/ROOT/WEB-INF/lib/*" \
+          -d $CATALINA_HOME/webapps/ROOT/WEB-INF/classes \
+          @sources.txt && \
+    rm -rf /tmp/java-src
 
 # Copy startup script
 COPY docker-entrypoint.sh /app/

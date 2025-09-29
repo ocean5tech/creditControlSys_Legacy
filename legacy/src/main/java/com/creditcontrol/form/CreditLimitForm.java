@@ -98,7 +98,7 @@ public class CreditLimitForm extends ActionForm {
                     errors.add("newCreditLimit", 
                         new ActionMessage("error.creditlimit.negative"));
                 }
-                if (limit.compareTo(new BigDecimal("10000000")) > 0) { // $10M max
+                if (limit.compareTo(new BigDecimal("10000000")) > 0) { // $10M max - TODO: move to database
                     errors.add("newCreditLimit", 
                         new ActionMessage("error.creditlimit.toolarge"));
                 }
